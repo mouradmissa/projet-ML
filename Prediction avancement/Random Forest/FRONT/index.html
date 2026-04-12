@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prédiction d'avancement — Random Forest</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c1222;
+    --card: #151d33;
+    --border: #2a3550;
+    --text: #e8eef7;
+    --muted: #8b9bb8;
+    --accent: #6366f1;
+    --accent2: #22d3ee;
+    --ok: #34d399;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 20px 48px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .hub-nav { margin-bottom: 18px; font-size: 0.85rem; }
+  .hub-nav a { color: var(--accent2); text-decoration: none; font-weight: 600; }
+  .hub-nav a:hover { text-decoration: underline; }
+  .folder-tag { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  .sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; }
+  .tabs {
+    display: flex; gap: 6px; margin-bottom: 24px;
+    background: var(--card); padding: 6px; border-radius: 12px; border: 1px solid var(--border);
+  }
+  .tabs button {
+    flex: 1; border: none; background: transparent; color: var(--muted);
+    padding: 12px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;
+    font-family: inherit; font-size: 0.9rem;
+  }
+  .tabs button.active { background: linear-gradient(90deg, var(--accent), #4f46e5); color: #fff; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 820px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .card h2 { font-size: 1rem; margin-bottom: 16px; color: var(--accent2); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
+  input, select {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+    background: #0f1629; color: var(--text); font-family: inherit; font-size: 0.9rem;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  .quick { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .quick button {
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: #0f1629; color: var(--muted); font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .quick button:hover { border-color: var(--accent); color: var(--text); }
+  .btn {
+    width: 100%; margin-top: 16px; padding: 14px; border: none; border-radius: 12px;
+    font-weight: 700; font-family: inherit; font-size: 0.95rem; cursor: pointer;
+    background: linear-gradient(90deg, var(--accent), #4f46e5); color: #fff;
+  }
+  .btn:disabled { opacity: 0.6; cursor: wait; }
+  .result-big {
+    text-align: center; padding: 28px; border-radius: 14px;
+    background: linear-gradient(145deg, rgba(99,102,241,0.15), rgba(34,211,238,0.08));
+    border: 1px solid var(--border); margin-bottom: 16px;
+  }
+  .result-big .pct { font-size: 3rem; font-weight: 800; color: var(--ok); line-height: 1.1; }
+  .result-big .lbl { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.1em; margin-top: 8px; }
+  .bar-wrap { height: 12px; background: #0f1629; border-radius: 6px; overflow: hidden; margin-top: 12px; }
+  .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 6px; transition: width 0.6s ease; }
+  .meta-line { font-size: 0.85rem; color: var(--muted); margin-top: 10px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  @media (max-width: 600px) { .stats { grid-template-columns: 1fr; } }
+  .stat {
+    text-align: center; padding: 16px; border-radius: 12px; border: 1px solid var(--border); background: #0f1629;
+  }
+  .stat .v { font-size: 1.5rem; font-weight: 800; color: var(--accent2); }
+  .stat .l { font-size: 0.65rem; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  .params { display: flex; flex-wrap: wrap; gap: 10px; }
+  .param {
+    padding: 10px 14px; border-radius: 10px; border: 1px solid var(--border);
+    background: #0f1629; font-size: 0.8rem;
+  }
+  .param strong { color: var(--accent2); }
+  .hint { font-size: 0.8rem; color: var(--muted); margin-top: 12px; line-height: 1.5; }
+  .err { color: #f87171; font-size: 0.9rem; margin-top: 12px; }
+  footer { text-align: center; margin-top: 32px; font-size: 0.75rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="hub-nav"><a href="/accueil_progress">&larr; Tous les mod&egrave;les (Progress)</a></p>
+  <p class="folder-tag">Prediction avancement / Random Forest / FRONT /</p>
+  <h1>Pr&eacute;diction de l'avancement (Progress)</h1>
+  <p class="sub">Random Forest Regressor &mdash; cible continue entre 0 et 1. Les dates d&eacute;finissent la dur&eacute;e planifi&eacute;e et les d&eacute;lais par rapport &agrave; la date de r&eacute;f&eacute;rence du mod&egrave;le (voir m&eacute;tadonn&eacute;es).</p>
+
+  <div class="tabs">
+    <button type="button" class="active" id="tabBtnPred" onclick="showTab('pred')">Test pr&eacute;diction</button>
+    <button type="button" id="tabBtnPerf" onclick="showTab('perf')">M&eacute;triques mod&egrave;le</button>
+  </div>
+
+  <div class="panel active" id="panel-pred">
+    <div class="grid">
+      <div class="card">
+        <h2>Entr&eacute;es</h2>
+        <div class="quick">
+          <button type="button" onclick="fillEx('row1')">Ex. dataset (ligne 1)</button>
+          <button type="button" onclick="fillEx('completed')">T&acirc;che termin&eacute;e</button>
+          <button type="button" onclick="fillEx('pending')">Pas commenc&eacute;</button>
+        </div>
+        <div class="form-grid">
+          <div class="full"><label>Date de d&eacute;but (JJ/MM/AAAA)</label><input type="text" id="start_date" value="21/07/2024" placeholder="21/07/2024"></div>
+          <div class="full"><label>Date de fin (JJ/MM/AAAA)</label><input type="text" id="end_date" value="08/08/2024" placeholder="08/08/2024"></div>
+          <div><label>Type de projet</label>
+            <select id="project_type">
+              <option value="Construction">Construction (r&eacute;f.)</option>
+              <option value="Renovation">Renovation</option>
+              <option value="Infrastructure">Infrastructure</option>
+              <option value="Innovation">Innovation</option>
+              <option value="Maintenance">Maintenance</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div><label>Statut projet</label>
+            <select id="project_status">
+              <option value="On Hold">On Hold</option>
+              <option value="Behind" selected>Behind</option>
+              <option value="On Track">On Track</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div><label>Priorit&eacute;</label>
+            <select id="priority">
+              <option value="High" selected>High (r&eacute;f.)</option>
+              <option value="Medium">Medium</option>
+              <option value="Low">Low</option>
+            </select>
+          </div>
+          <div><label>Task ID</label>
+            <select id="task_id">
+              <option value="T001" selected>T001 (r&eacute;f.)</option>
+              <option value="T002">T002</option>
+              <option value="T003">T003</option>
+            </select>
+          </div>
+          <div><label>Statut t&acirc;che</label>
+            <select id="task_status">
+              <option value="Pending">Pending</option>
+              <option value="In Progress" selected>In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div><label>Assign&eacute; &agrave;</label>
+            <select id="assigned_to">
+              <option value="Alice" selected>Alice (r&eacute;f.)</option>
+              <option value="Bob">Bob</option>
+              <option value="Charlie">Charlie</option>
+              <option value="David">David</option>
+              <option value="Eve">Eve</option>
+              <option value="Frank">Frank</option>
+              <option value="Grace">Grace</option>
+              <option value="Ivy">Ivy</option>
+            </select>
+          </div>
+          <div><label>Heures pass&eacute;es</label><input type="number" id="hours_spent" value="12" min="0"></div>
+          <div><label>Budget (&euro;)</label><input type="number" id="budget" value="9621" min="0"></div>
+          <div><label>Co&ucirc;t r&eacute;el (&euro;)</label><input type="number" id="actual_cost" value="0" min="0"></div>
+          <div><label>Historique t&acirc;ches assign&eacute;</label><input type="number" id="history_count" value="0" min="0"></div>
+        </div>
+        <button type="button" class="btn" id="btnPred" onclick="doPredict()">Pr&eacute;dire l'avancement</button>
+        <p class="hint">La cible <strong>Progress</strong> n'est pas une entr&eacute;e : le mod&egrave;le estime le pourcentage d'avancement &agrave; partir du contexte projet / t&acirc;che et des co&ucirc;ts.</p>
+        <div class="err" id="predErr" style="display:none;"></div>
+      </div>
+      <div class="card">
+        <h2>R&eacute;sultat</h2>
+        <div class="result-big">
+          <div class="lbl">Progress pr&eacute;dit</div>
+          <div class="pct" id="outPct">&mdash;</div>
+          <div class="bar-wrap"><div class="bar-fill" id="outBar" style="width:0%"></div></div>
+          <div class="meta-line" id="outMeta"></div>
+        </div>
+        <p class="hint" id="outHint"></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-perf">
+    <div class="card">
+      <h2>Performances (dernier entra&icirc;nement)</h2>
+      <div class="err" id="perfErr" style="display:none;"></div>
+      <div id="perfBody" style="display:none;">
+        <div class="stats">
+          <div class="stat"><div class="v" id="mR2">&mdash;</div><div class="l">R&sup2; (test)</div></div>
+          <div class="stat"><div class="v" id="mRmse">&mdash;</div><div class="l">RMSE</div></div>
+          <div class="stat"><div class="v" id="mMae">&mdash;</div><div class="l">MAE</div></div>
+        </div>
+        <p class="meta-line" id="perfSamples"></p>
+        <p class="meta-line" id="perfRef"></p>
+        <h2 style="margin-top:20px;">Hyperparam&egrave;tres</h2>
+        <div class="params" id="perfParams"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer><code>python app.py</code> (FRONT) &middot; Modèles : <code>../MODEL/</code> &middot; Port <strong>5002</strong></footer>
+</div>
+
+<script>
+function showTab(which) {
+  document.getElementById('tabBtnPred').classList.toggle('active', which === 'pred');
+  document.getElementById('tabBtnPerf').classList.toggle('active', which === 'perf');
+  document.getElementById('panel-pred').classList.toggle('active', which === 'pred');
+  document.getElementById('panel-perf').classList.toggle('active', which === 'perf');
+  if (which === 'perf') loadPerf();
+}
+
+const EXAMPLES = {
+  row1: {
+    start_date: '21/07/2024', end_date: '08/08/2024',
+    project_type: 'Renovation', project_status: 'Behind', priority: 'Medium',
+    task_id: 'T001', task_status: 'In Progress', assigned_to: 'Bob',
+    hours_spent: 12, budget: 9621, actual_cost: 0, history_count: 0
+  },
+  completed: {
+    start_date: '01/06/2024', end_date: '15/06/2024',
+    project_type: 'Maintenance', project_status: 'Completed', priority: 'Low',
+    task_id: 'T001', task_status: 'Completed', assigned_to: 'Eve',
+    hours_spent: 20, budget: 8000, actual_cost: 7800, history_count: 25
+  },
+  pending: {
+    start_date: '01/12/2025', end_date: '01/03/2026',
+    project_type: 'Construction', project_status: 'On Track', priority: 'High',
+    task_id: 'T002', task_status: 'Pending', assigned_to: 'Alice',
+    hours_spent: 0, budget: 10000, actual_cost: 0, history_count: 5
+  }
+};
+
+function fillEx(key) {
+  const e = EXAMPLES[key];
+  for (const [k, v] of Object.entries(e)) {
+    const el = document.getElementById(k);
+    if (el) el.value = v;
+  }
+}
+
+async function doPredict() {
+  const btn = document.getElementById('btnPred');
+  const err = document.getElementById('predErr');
+  err.style.display = 'none';
+  btn.disabled = true;
+  const payload = {
+    start_date: document.getElementById('start_date').value.trim(),
+    end_date: document.getElementById('end_date').value.trim(),
+    project_type: document.getElementById('project_type').value,
+    project_status: document.getElementById('project_status').value,
+    priority: document.getElementById('priority').value,
+    task_id: document.getElementById('task_id').value,
+    task_status: document.getElementById('task_status').value,
+    assigned_to: document.getElementById('assigned_to').value,
+    hours_spent: +document.getElementById('hours_spent').value || 0,
+    budget: +document.getElementById('budget').value || 0,
+    actual_cost: +document.getElementById('actual_cost').value || 0,
+    assignee_historical_task_count: +document.getElementById('history_count').value || 0
+  };
+  try {
+    const r = await fetch('/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const d = await r.json().catch(function () { return {}; });
+    if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+    const p = d.progress_percent;
+    document.getElementById('outPct').textContent = p + ' %';
+    document.getElementById('outBar').style.width = Math.min(100, Math.max(0, p)) + '%';
+    document.getElementById('outMeta').textContent =
+      'Budget utilization : ' + (d.budget_utilization * 100).toFixed(2) + ' % — date réf. modèle : ' + d.reference_date;
+    document.getElementById('outHint').textContent = 'Valeur normalisée [0,1] : ' + d.progress;
+  } catch (e) {
+    err.textContent = 'Erreur : ' + e.message;
+    err.style.display = 'block';
+  }
+  btn.disabled = false;
+}
+
+let perfLoaded = false;
+async function loadPerf() {
+  if (perfLoaded) return;
+  const err = document.getElementById('perfErr');
+  const body = document.getElementById('perfBody');
+  err.style.display = 'none';
+  try {
+    const r = await fetch('/meta');
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const m = await r.json();
+    document.getElementById('mR2').textContent = (m.r2_test != null) ? m.r2_test.toFixed(4) : '—';
+    document.getElementById('mRmse').textContent = (m.rmse_test != null) ? m.rmse_test.toFixed(4) : '—';
+    document.getElementById('mMae').textContent = (m.mae_test != null) ? m.mae_test.toFixed(4) : '—';
+    document.getElementById('perfSamples').textContent =
+      'Train : ' + (m.n_samples_train ?? '—') + ' | Test : ' + (m.n_samples_test ?? '—') + ' | Features : ' + (m.n_features ?? '—');
+    document.getElementById('perfRef').textContent = 'Date de référence (features temporelles) : ' + (m.REFERENCE_DATE || '—');
+    const box = document.getElementById('perfParams');
+    box.innerHTML = '';
+    if (m.best_params && typeof m.best_params === 'object') {
+      for (const [k, v] of Object.entries(m.best_params)) {
+        const d = document.createElement('div');
+        d.className = 'param';
+        d.innerHTML = '<strong>' + k + '</strong> : ' + (v === null ? 'null' : v);
+        box.appendChild(d);
+      }
+    }
+    body.style.display = 'block';
+    perfLoaded = true;
+  } catch (e) {
+    err.textContent = 'Impossible de charger /meta : ' + e.message;
+    err.style.display = 'block';
+  }
+}
+</script>
+</body>
+</html>

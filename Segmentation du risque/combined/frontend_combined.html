@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Risk Segmentation - 3 Algorithmes</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0a0a0f;--bg2:#12121a;--card:#1a1a2e;--input:#16213e;
+  --brd:#2a2a4a;--brd-focus:#7c3aed;
+  --t1:#e2e8f0;--t2:#94a3b8;--t3:#64748b;
+  --knn:#7c3aed;--knn-l:#a78bfa;--knn-glow:rgba(124,58,237,.3);
+  --rf:#059669;--rf-l:#34d399;--rf-glow:rgba(5,150,105,.3);
+  --dt:#d97706;--dt-l:#fbbf24;--dt-glow:rgba(217,119,6,.3);
+  --rh:#ef4444;--rh-bg:rgba(239,68,68,.12);
+  --rm:#f59e0b;--rm-bg:rgba(245,158,11,.12);
+  --rl:#10b981;--rl-bg:rgba(16,185,129,.12);
+  --grad:linear-gradient(135deg,#7c3aed 0%,#059669 50%,#d97706 100%);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;overflow-x:hidden}
+.bg-grid{position:fixed;inset:0;background-image:linear-gradient(rgba(124,58,237,.03) 1px,transparent 1px),linear-gradient(90deg,rgba(124,58,237,.03) 1px,transparent 1px);background-size:60px 60px;pointer-events:none;z-index:0}
+.bg-glow{position:fixed;width:500px;height:500px;border-radius:50%;filter:blur(150px);opacity:.06;pointer-events:none;z-index:0}
+.bg-glow-1{top:-200px;left:-100px;background:#7c3aed}
+.bg-glow-2{bottom:-200px;right:-100px;background:#059669}
+.bg-glow-3{top:50%;left:50%;transform:translate(-50%,-50%);background:#d97706}
+.container{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:30px 24px}
+
+.header{text-align:center;margin-bottom:32px}
+.header-badge{display:inline-flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--brd);border-radius:50px;padding:8px 20px;font-size:12px;font-weight:600;color:var(--knn-l);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:12px}
+.header-badge .dot{width:8px;height:8px;background:var(--knn);border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+.header h1{font-size:40px;font-weight:900;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:8px}
+.header p{font-size:14px;color:var(--t2);max-width:700px;margin:0 auto;line-height:1.6}
+
+.tabs{display:flex;gap:4px;background:var(--card);border:1px solid var(--brd);border-radius:14px;padding:4px;margin-bottom:28px}
+.tab-btn{flex:1;padding:13px;border:none;background:transparent;color:var(--t3);font-family:'Inter',sans-serif;font-size:13px;font-weight:600;cursor:pointer;border-radius:10px;transition:.3s;text-transform:uppercase;letter-spacing:.5px}
+.tab-btn.active{background:var(--grad);color:#fff;box-shadow:0 4px 20px var(--knn-glow)}
+.tab-btn:not(.active):hover{color:var(--t1);background:rgba(124,58,237,.08)}
+.tab-content{display:none}.tab-content.active{display:block;animation:fadeUp .4s ease}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+
+.scenario{background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid var(--brd);border-radius:16px;padding:22px 26px;margin-bottom:28px;position:relative;overflow:hidden}
+.scenario::before{content:'';position:absolute;top:0;left:0;width:4px;height:100%;background:var(--grad);border-radius:4px 0 0 4px}
+.scenario-title{font-size:12px;font-weight:700;color:var(--knn-l);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px}
+.scenario p{font-size:13px;color:var(--t2);line-height:1.7}.scenario strong{color:var(--t1)}
+
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start}
+@media(max-width:900px){.main-grid{grid-template-columns:1fr}.header h1{font-size:28px}}
+
+.card{background:var(--card);border:1px solid var(--brd);border-radius:18px;padding:24px;transition:border-color .3s}
+.card:hover{border-color:rgba(124,58,237,.25)}
+.card-title{font-size:15px;font-weight:700;margin-bottom:18px;display:flex;align-items:center;gap:10px}
+.card-title .icon{width:32px;height:32px;background:var(--knn-glow);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:15px}
+
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.full{grid-column:1/-1}
+.form-group label{font-size:10px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px}
+.form-group input,.form-group select{background:var(--input);border:1px solid var(--brd);border-radius:9px;padding:10px 12px;font-size:12px;font-family:'Inter',sans-serif;color:var(--t1);transition:.2s;outline:none;width:100%}
+.form-group input:focus,.form-group select:focus{border-color:var(--brd-focus);box-shadow:0 0 0 3px var(--knn-glow)}
+.form-group select option{background:var(--bg2);color:var(--t1)}
+.slider-container{display:flex;align-items:center;gap:10px}
+.slider-container input[type="range"]{flex:1;-webkit-appearance:none;appearance:none;height:6px;background:var(--brd);border-radius:3px;border:none;padding:0}
+.slider-container input[type="range"]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;background:var(--knn);border-radius:50%;cursor:pointer;box-shadow:0 0 10px var(--knn-glow)}
+.slider-value{min-width:44px;text-align:center;font-size:12px;font-weight:700;color:var(--knn-l);background:var(--input);padding:4px 8px;border-radius:7px;border:1px solid var(--brd)}
+
+.scenarios-quick{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px}
+.scenario-btn{padding:6px 12px;background:var(--input);border:1px solid var(--brd);border-radius:7px;font-size:10px;font-weight:600;font-family:'Inter',sans-serif;color:var(--t2);cursor:pointer;transition:.2s}
+.scenario-btn:hover{border-color:var(--knn);color:var(--knn-l);background:var(--knn-glow)}
+
+.btn-predict{width:100%;margin-top:14px;padding:13px;background:var(--grad);border:none;border-radius:11px;font-size:14px;font-weight:700;font-family:'Inter',sans-serif;color:#fff;cursor:pointer;transition:.3s;text-transform:uppercase;letter-spacing:1px}
+.btn-predict:hover{transform:translateY(-2px);box-shadow:0 8px 30px var(--knn-glow)}
+.btn-predict:active{transform:translateY(0)}
+.btn-predict.loading{opacity:.7;pointer-events:none}
+
+/* RESULTS - 3 columns */
+.results-grid{display:none;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-top:16px}
+.results-grid.visible{display:grid;animation:fadeUp .5s ease}
+@media(max-width:900px){.results-grid{grid-template-columns:1fr}}
+
+.algo-result{border-radius:16px;padding:20px;border:1px solid var(--brd);background:var(--card);position:relative;overflow:hidden}
+.algo-result::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px}
+.algo-result.knn::before{background:linear-gradient(90deg,#7c3aed,#3b82f6)}
+.algo-result.rf::before{background:linear-gradient(90deg,#059669,#0891b2)}
+.algo-result.dt::before{background:linear-gradient(90deg,#d97706,#b45309)}
+.algo-tag{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px;padding:4px 10px;border-radius:6px;display:inline-block}
+.algo-tag.knn{background:var(--knn-glow);color:var(--knn-l)}
+.algo-tag.rf{background:var(--rf-glow);color:var(--rf-l)}
+.algo-tag.dt{background:var(--dt-glow);color:var(--dt-l)}
+
+.risk-badge{text-align:center;padding:18px 12px;border-radius:14px;margin-bottom:14px;border:1px solid transparent}
+.risk-badge .risk-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:2px;margin-bottom:6px;opacity:.8}
+.risk-badge .risk-value{font-size:32px;font-weight:900;line-height:1}
+.risk-badge.high{background:var(--rh-bg);border-color:rgba(239,68,68,.3);color:var(--rh)}
+.risk-badge.medium{background:var(--rm-bg);border-color:rgba(245,158,11,.3);color:var(--rm)}
+.risk-badge.low{background:var(--rl-bg);border-color:rgba(16,185,129,.3);color:var(--rl)}
+
+.proba-bar-group{margin-bottom:8px}
+.proba-bar-header{display:flex;justify-content:space-between;font-size:11px;margin-bottom:3px}
+.proba-bar-header .label{font-weight:600}.proba-bar-header .value{color:var(--t3)}
+.proba-bar-track{height:6px;background:var(--input);border-radius:3px;overflow:hidden}
+.proba-bar-fill{height:100%;border-radius:3px;transition:width .8s ease}
+.proba-bar-fill.high{background:var(--rh)}.proba-bar-fill.medium{background:var(--rm)}.proba-bar-fill.low{background:var(--rl)}
+
+/* CONSENSUS */
+.consensus-card{display:none;margin-top:16px;padding:20px;border-radius:16px;text-align:center;border:2px solid}
+.consensus-card.visible{display:block;animation:fadeUp .6s ease}
+.consensus-card.high{border-color:var(--rh);background:var(--rh-bg)}
+.consensus-card.medium{border-color:var(--rm);background:var(--rm-bg)}
+.consensus-card.low{border-color:var(--rl);background:var(--rl-bg)}
+.consensus-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:2px;margin-bottom:8px;opacity:.8}
+.consensus-value{font-size:36px;font-weight:900}
+.consensus-sub{font-size:11px;margin-top:6px;opacity:.7}
+.vote-pills{display:flex;justify-content:center;gap:8px;margin-top:10px}
+.vote-pill{padding:4px 12px;border-radius:20px;font-size:10px;font-weight:700;border:1px solid var(--brd)}
+
+/* PERFORMANCE TAB */
+.perf-loading{text-align:center;padding:50px;color:var(--t3);font-size:14px}
+.perf-loading .spinner{display:inline-block;width:30px;height:30px;border:3px solid var(--brd);border-top-color:var(--knn);border-radius:50%;animation:spin .8s linear infinite;margin-bottom:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.compare-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+@media(max-width:900px){.compare-row{grid-template-columns:1fr}}
+
+.algo-perf-card{border-radius:16px;padding:22px;border:1px solid var(--brd);background:var(--card);position:relative;overflow:hidden}
+.algo-perf-card::before{content:'';position:absolute;top:0;left:0;width:100%;height:3px}
+.algo-perf-card.knn::before{background:linear-gradient(90deg,#7c3aed,#3b82f6)}
+.algo-perf-card.rf::before{background:linear-gradient(90deg,#059669,#0891b2)}
+.algo-perf-card.dt::before{background:linear-gradient(90deg,#d97706,#b45309)}
+
+.big-acc{font-size:42px;font-weight:900;text-align:center;margin:12px 0 4px}
+.big-acc.knn{color:var(--knn-l)}.big-acc.rf{color:var(--rf-l)}.big-acc.dt{color:var(--dt-l)}
+.small-label{text-align:center;font-size:10px;font-weight:600;color:var(--t3);text-transform:uppercase;letter-spacing:.5px}
+
+.mini-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.mini-stat{background:var(--input);border:1px solid var(--brd);border-radius:8px;padding:10px;text-align:center}
+.mini-stat .mv{font-size:16px;font-weight:800}.mini-stat .ml{font-size:9px;color:var(--t3);text-transform:uppercase;margin-top:2px}
+
+.metrics-table{width:100%;border-collapse:collapse}
+.metrics-table th,.metrics-table td{padding:8px 10px;text-align:center;font-size:12px}
+.metrics-table th{font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--brd)}
+.metrics-table td{border-bottom:1px solid rgba(42,42,74,.3);color:var(--t2)}
+.metrics-table tr:last-child td{border-bottom:none}
+.metrics-table .cls-name{font-weight:700;color:var(--t1);text-align:left}
+.metrics-table .highlight{font-weight:800}
+
+.conf-grid{display:grid;gap:3px;margin-top:10px}
+.conf-cell{border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 6px;font-size:16px;font-weight:800;transition:transform .2s}
+.conf-cell:hover{transform:scale(1.05)}
+.conf-cell .conf-label{font-size:8px;font-weight:600;opacity:.7;margin-top:3px;text-transform:uppercase}
+.conf-header{font-size:9px;font-weight:700;color:var(--t3);text-transform:uppercase;display:flex;align-items:center;justify-content:center}
+
+.footer{text-align:center;margin-top:36px;padding:14px;font-size:11px;color:var(--t3);border-top:1px solid var(--brd)}
+</style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+<div class="bg-glow bg-glow-3"></div>
+
+<div class="container">
+  <div class="header">
+    <div class="header-badge"><span class="dot"></span> Multi-Model Comparator</div>
+    <h1>Risk Segmentation</h1>
+    <p>Comparez 3 algorithmes de classification &mdash; <strong>KNN</strong>, <strong>Random Forest</strong> et <strong>Decision Tree</strong> &mdash; sur le m&ecirc;me sc&eacute;nario projet</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('predict')">Pr&eacute;diction</button>
+    <button class="tab-btn" onclick="switchTab('performance')">Performance</button>
+  </div>
+
+  <!-- ============ TAB PREDICT ============ -->
+  <div class="tab-content active" id="tab-predict">
+    <div class="scenario">
+      <div class="scenario-title">Sc&eacute;nario r&eacute;el</div>
+      <p>Remplissez les param&egrave;tres du projet et comparez les pr&eacute;dictions des <strong>3 algorithmes</strong> simultan&eacute;ment. Le <strong>vote majoritaire</strong> d&eacute;termine le consensus.</p>
+    </div>
+
+    <div class="main-grid">
+      <div class="card">
+        <div class="card-title"><div class="icon">&#9881;</div> Param&egrave;tres du projet</div>
+        <div class="scenarios-quick">
+          <button class="scenario-btn" onclick="fillScenario('high')">Risque &eacute;lev&eacute;</button>
+          <button class="scenario-btn" onclick="fillScenario('medium')">Risque moyen</button>
+          <button class="scenario-btn" onclick="fillScenario('low')">Risque faible</button>
+          <button class="scenario-btn" onclick="fillScenario('clear')">R&eacute;initialiser</button>
+        </div>
+        <div class="form-grid">
+          <div class="form-group"><label>Type de projet</label><select id="project_type"><option value="Renovation">Renovation</option><option value="Construction">Construction</option><option value="Infrastructure">Infrastructure</option><option value="Innovation">Innovation</option><option value="Maintenance">Maintenance</option><option value="Other">Other</option></select></div>
+          <div class="form-group"><label>Statut du projet</label><select id="project_status"><option value="Behind">Behind</option><option value="On Track">On Track</option><option value="On Hold">On Hold</option><option value="Completed">Completed</option></select></div>
+          <div class="form-group"><label>Priorit&eacute;</label><select id="priority"><option value="High">High</option><option value="Medium">Medium</option><option value="Low">Low</option></select></div>
+          <div class="form-group"><label>T&acirc;che</label><select id="task_id"><option value="T001">T001</option><option value="T002">T002</option><option value="T003">T003</option></select></div>
+          <div class="form-group"><label>Statut t&acirc;che</label><select id="task_status"><option value="In Progress">In Progress</option><option value="Pending">Pending</option><option value="Completed">Completed</option></select></div>
+          <div class="form-group"><label>Assign&eacute; &agrave;</label><select id="assigned_to"><option value="Bob">Bob</option><option value="Charlie">Charlie</option><option value="Alice">Alice</option><option value="Eve">Eve</option><option value="Grace">Grace</option><option value="Ivy">Ivy</option><option value="David">David</option><option value="Frank">Frank</option></select></div>
+          <div class="form-group"><label>Heures pass&eacute;es</label><input type="number" id="hours_spent" value="12" min="0" max="100"></div>
+          <div class="form-group"><label>Budget (&euro;)</label><input type="number" id="budget" value="9621" min="0" max="100000"></div>
+          <div class="form-group"><label>Co&ucirc;t r&eacute;el (&euro;)</label><input type="number" id="actual_cost" value="0" min="0" max="100000"></div>
+          <div class="form-group"><label>Dur&eacute;e (jours)</label><input type="number" id="planned_duration" value="18" min="1" max="1000"></div>
+          <div class="form-group"><label>Historique t&acirc;ches</label><input type="number" id="history_count" value="0" min="0" max="100"></div>
+          <div class="form-group full">
+            <label>Progression : <span id="progress_display">24%</span></label>
+            <div class="slider-container">
+              <input type="range" id="progress" min="0" max="100" value="24" oninput="document.getElementById('progress_display').textContent=this.value+'%';document.getElementById('progress_val').textContent=this.value+'%'">
+              <span class="slider-value" id="progress_val">24%</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn-predict" id="btnPredict" onclick="predictAll()">Comparer les 3 algorithmes</button>
+      </div>
+
+      <div>
+        <!-- CONSENSUS -->
+        <div class="consensus-card" id="consensusCard">
+          <div class="consensus-title">Consensus (Vote Majoritaire)</div>
+          <div class="consensus-value" id="consensusValue">-</div>
+          <div class="consensus-sub" id="consensusSub"></div>
+          <div class="vote-pills" id="votePills"></div>
+        </div>
+
+        <!-- 3 RESULTS -->
+        <div class="results-grid" id="resultsGrid">
+          <div class="algo-result knn" id="res-knn"></div>
+          <div class="algo-result rf" id="res-rf"></div>
+          <div class="algo-result dt" id="res-dt"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB PERFORMANCE ============ -->
+  <div class="tab-content" id="tab-performance">
+    <div class="perf-loading" id="perfLoading"><div class="spinner"></div><br>Chargement des m&eacute;triques des 3 mod&egrave;les...</div>
+    <div id="perfContent" style="display:none">
+
+      <!-- ACCURACY COMPARISON -->
+      <div class="compare-row" id="accCards"></div>
+
+      <!-- CLASSIFICATION REPORTS -->
+      <div class="compare-row" id="reportCards"></div>
+
+      <!-- CONFUSION MATRICES -->
+      <div class="compare-row" id="confCards"></div>
+
+    </div>
+  </div>
+
+  <div class="footer">Risk Segmentation &mdash; KNN &middot; Random Forest &middot; Decision Tree &middot; Flask API &middot; Comparateur Unifie</div>
+</div>
+
+<script>
+const ALGOS=[
+  {key:'knn',name:'KNN',cls:'knn',color:'var(--knn-l)'},
+  {key:'rf',name:'Random Forest',cls:'rf',color:'var(--rf-l)'},
+  {key:'dt',name:'Decision Tree',cls:'dt',color:'var(--dt-l)'}
+];
+const RISK_DESC={High:'Situation critique.',Medium:'Vigilance requise.',Low:'Sous contr\u00f4le.'};
+const RISK_CLR={High:'var(--rh)',Medium:'var(--rm)',Low:'var(--rl)'};
+
+function switchTab(id){
+  document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&id==='predict')||(i===1&&id==='performance')));
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  if(id==='performance'&&!metricsLoaded) loadMetrics();
+}
+
+const SCENARIOS={
+  high:{project_type:'Renovation',project_status:'Behind',priority:'Medium',task_id:'T001',task_status:'In Progress',assigned_to:'Bob',hours_spent:12,budget:9621,actual_cost:0,planned_duration:18,history_count:0,progress:24},
+  medium:{project_type:'Construction',project_status:'On Hold',priority:'Medium',task_id:'T002',task_status:'In Progress',assigned_to:'Grace',hours_spent:26,budget:5908,actual_cost:0,planned_duration:25,history_count:12,progress:55},
+  low:{project_type:'Maintenance',project_status:'Completed',priority:'Low',task_id:'T001',task_status:'Completed',assigned_to:'Eve',hours_spent:18,budget:7962,actual_cost:7526,planned_duration:84,history_count:30,progress:100},
+  clear:{project_type:'Renovation',project_status:'Behind',priority:'High',task_id:'T001',task_status:'In Progress',assigned_to:'Bob',hours_spent:0,budget:5000,actual_cost:0,planned_duration:30,history_count:0,progress:50}
+};
+function fillScenario(t){
+  const s=SCENARIOS[t];
+  for(const[k,v]of Object.entries(s)){const el=document.getElementById(k);if(el)el.value=v;}
+  document.getElementById('progress_display').textContent=s.progress+'%';
+  document.getElementById('progress_val').textContent=s.progress+'%';
+}
+
+function renderAlgoResult(containerId, algo, data){
+  const el=document.getElementById(containerId);
+  const r=data.risk_level;const p=data.probabilities;const low=r.toLowerCase();
+  el.innerHTML=`
+    <div class="algo-tag ${algo.cls}">${algo.name}</div>
+    <div class="risk-badge ${low}">
+      <div class="risk-label">Niveau de risque</div>
+      <div class="risk-value">${r.toUpperCase()}</div>
+    </div>
+    <div class="proba-bar-group"><div class="proba-bar-header"><span class="label" style="color:var(--rh)">&#9679; High</span><span class="value">${p.High||0}%</span></div><div class="proba-bar-track"><div class="proba-bar-fill high" style="width:${p.High||0}%"></div></div></div>
+    <div class="proba-bar-group"><div class="proba-bar-header"><span class="label" style="color:var(--rm)">&#9679; Medium</span><span class="value">${p.Medium||0}%</span></div><div class="proba-bar-track"><div class="proba-bar-fill medium" style="width:${p.Medium||0}%"></div></div></div>
+    <div class="proba-bar-group"><div class="proba-bar-header"><span class="label" style="color:var(--rl)">&#9679; Low</span><span class="value">${p.Low||0}%</span></div><div class="proba-bar-track"><div class="proba-bar-fill low" style="width:${p.Low||0}%"></div></div></div>`;
+}
+
+async function predictAll(){
+  const btn=document.getElementById('btnPredict');
+  btn.classList.add('loading');btn.textContent='Analyse en cours...';
+  const payload={
+    project_type:document.getElementById('project_type').value,
+    project_status:document.getElementById('project_status').value,
+    priority:document.getElementById('priority').value,
+    task_id:document.getElementById('task_id').value,
+    task_status:document.getElementById('task_status').value,
+    assigned_to:document.getElementById('assigned_to').value,
+    hours_spent:+document.getElementById('hours_spent').value||0,
+    budget:+document.getElementById('budget').value||0,
+    actual_cost:+document.getElementById('actual_cost').value||0,
+    planned_duration:+document.getElementById('planned_duration').value||0,
+    history_count:+document.getElementById('history_count').value||0,
+    progress:(+document.getElementById('progress').value||0)/100,
+  };
+  try{
+    const r=await fetch('/predict_all',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+
+    renderAlgoResult('res-knn',ALGOS[0],d.knn);
+    renderAlgoResult('res-rf',ALGOS[1],d.rf);
+    renderAlgoResult('res-dt',ALGOS[2],d.dt);
+
+    const grid=document.getElementById('resultsGrid');
+    grid.classList.remove('visible');void grid.offsetWidth;grid.classList.add('visible');
+
+    const cc=document.getElementById('consensusCard');
+    const con=d.consensus;
+    cc.className='consensus-card visible '+con.risk_level.toLowerCase();
+    document.getElementById('consensusValue').textContent=con.risk_level.toUpperCase();
+    document.getElementById('consensusValue').style.color=RISK_CLR[con.risk_level];
+    document.getElementById('consensusSub').textContent=con.unanimous?'Unanimit\u00e9 des 3 algorithmes':'Vote majoritaire (2/3)';
+
+    const pills=document.getElementById('votePills');pills.innerHTML='';
+    const algoNames=['KNN','RF','DT'];
+    con.votes.forEach((v,i)=>{
+      const clr=RISK_CLR[v];
+      pills.innerHTML+=`<span class="vote-pill" style="color:${clr};border-color:${clr}">${algoNames[i]}: ${v}</span>`;
+    });
+
+  }catch(e){alert('Erreur: '+e.message);}
+  btn.classList.remove('loading');btn.textContent='Comparer les 3 algorithmes';
+}
+
+/* ========== PERFORMANCE ========== */
+let metricsLoaded=false;
+async function loadMetrics(){
+  try{
+    const r=await fetch('/metrics');const m=await r.json();
+    document.getElementById('perfLoading').style.display='none';
+    document.getElementById('perfContent').style.display='block';
+    metricsLoaded=true;
+
+    const classes=m.classes;
+
+    // ACCURACY CARDS
+    const accDiv=document.getElementById('accCards');accDiv.innerHTML='';
+    ALGOS.forEach(a=>{
+      const d=m[a.key];
+      let extra='';
+      if(a.key==='knn') extra=`<div class="mini-stats"><div class="mini-stat"><div class="mv" style="color:${a.color}">${d.best_k}</div><div class="ml">Best K</div></div><div class="mini-stat"><div class="mv" style="color:${a.color}">${d.n_components_pca}</div><div class="ml">PCA Comp.</div></div><div class="mini-stat"><div class="mv">${d.n_train}</div><div class="ml">Train</div></div><div class="mini-stat"><div class="mv">${d.n_test}</div><div class="ml">Test</div></div></div>`;
+      else if(a.key==='rf') extra=`<div class="mini-stats"><div class="mini-stat"><div class="mv" style="color:${a.color}">${d.best_params.n_estimators}</div><div class="ml">Arbres</div></div><div class="mini-stat"><div class="mv" style="color:${a.color}">${d.baseline_accuracy}%</div><div class="ml">Baseline</div></div><div class="mini-stat"><div class="mv">${d.n_train}</div><div class="ml">Train</div></div><div class="mini-stat"><div class="mv">${d.n_test}</div><div class="ml">Test</div></div></div>`;
+      else extra=`<div class="mini-stats"><div class="mini-stat"><div class="mv" style="color:${a.color}">${d.final_depth}</div><div class="ml">Profondeur</div></div><div class="mini-stat"><div class="mv" style="color:${a.color}">${d.baseline_accuracy}%</div><div class="ml">Baseline</div></div><div class="mini-stat"><div class="mv">${d.n_train}</div><div class="ml">Train</div></div><div class="mini-stat"><div class="mv">${d.n_test}</div><div class="ml">Test</div></div></div>`;
+      accDiv.innerHTML+=`<div class="algo-perf-card ${a.cls}"><div class="algo-tag ${a.cls}">${a.name}</div><div class="big-acc ${a.cls}">${d.accuracy}%</div><div class="small-label">Accuracy</div><div style="text-align:center;font-size:12px;color:var(--t2);margin-top:4px">F1 pond\u00e9r\u00e9 : <strong style="color:${a.color}">${d.weighted_f1}%</strong></div>${extra}</div>`;
+    });
+
+    // CLASSIFICATION REPORTS
+    const repDiv=document.getElementById('reportCards');repDiv.innerHTML='';
+    ALGOS.forEach(a=>{
+      const d=m[a.key];
+      let rows='';
+      d.class_metrics.forEach(c=>{
+        const clr=c.class==='High'?'var(--rh)':c.class==='Medium'?'var(--rm)':'var(--rl)';
+        rows+=`<tr><td class="cls-name" style="color:${clr}">${c.class}</td><td>${c.precision}%</td><td>${c.recall}%</td><td class="highlight" style="color:${a.color}">${c.f1}%</td><td>${c.support}</td></tr>`;
+      });
+      repDiv.innerHTML+=`<div class="algo-perf-card ${a.cls}"><div class="algo-tag ${a.cls}">${a.name} &mdash; Classification Report</div><table class="metrics-table"><thead><tr><th style="text-align:left">Classe</th><th>Prec.</th><th>Recall</th><th>F1</th><th>Sup.</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    });
+
+    // CONFUSION MATRICES
+    const confDiv=document.getElementById('confCards');confDiv.innerHTML='';
+    ALGOS.forEach(a=>{
+      const cm=m[a.key].confusion_matrix;
+      const n=classes.length;
+      let maxV=0; cm.forEach(r=>r.forEach(v=>{if(v>maxV)maxV=v}));
+      let html=`<div class="algo-perf-card ${a.cls}"><div class="algo-tag ${a.cls}">${a.name} &mdash; Matrice de Confusion</div><div class="conf-grid" style="display:grid;grid-template-columns:60px repeat(${n},1fr);gap:3px;margin-top:12px">`;
+      html+='<div></div>';
+      classes.forEach(c=>{const clr=c==='High'?'var(--rh)':c==='Medium'?'var(--rm)':'var(--rl)';html+=`<div class="conf-header" style="color:${clr}">P.${c}</div>`;});
+      for(let i=0;i<n;i++){
+        const clr=classes[i]==='High'?'var(--rh)':classes[i]==='Medium'?'var(--rm)':'var(--rl)';
+        html+=`<div class="conf-header" style="color:${clr}">V.${classes[i]}</div>`;
+        for(let j=0;j<n;j++){
+          const v=cm[i][j];const isDiag=i===j;
+          const op=0.15+(v/maxV)*0.85;
+          const bg=isDiag?`rgba(16,185,129,${op})`:`rgba(239,68,68,${op*0.6})`;
+          const col=isDiag?'var(--rl)':'var(--rh)';
+          html+=`<div class="conf-cell" style="background:${bg};color:${col}">${v}<div class="conf-label">${classes[i]}&rarr;${classes[j]}</div></div>`;
+        }
+      }
+      html+='</div></div>';
+      confDiv.innerHTML+=html;
+    });
+
+  }catch(e){document.getElementById('perfLoading').innerHTML='<span style="color:var(--rh)">Erreur : '+e.message+'</span>';}
+}
+</script>
+</body>
+</html>

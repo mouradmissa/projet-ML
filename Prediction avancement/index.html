@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prediction avancement — accueil</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root { --bg: #0a0e17; --card: #131b2e; --b: #2a3550; --t: #e8eef7; --m: #8b9bb8; --a: #818cf8; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', sans-serif; background: var(--bg); color: var(--t); min-height: 100vh; padding: 40px 20px; }
+  .wrap { max-width: 760px; margin: 0 auto; }
+  h1 { font-size: 1.45rem; font-weight: 800; margin-bottom: 8px; background: linear-gradient(90deg, #a78bfa, #38bdf8); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .sub { color: var(--m); font-size: 0.9rem; margin-bottom: 26px; line-height: 1.55; }
+  .tree { font-family: ui-monospace, Consolas, monospace; font-size: 0.78rem; color: #94a3b8; background: #0c1220; border: 1px solid var(--b); border-radius: 10px; padding: 16px 18px; margin-bottom: 24px; line-height: 1.65; }
+  .cards { display: grid; gap: 14px; }
+  a.card {
+    display: block; text-decoration: none; color: inherit;
+    background: var(--card); border: 1px solid var(--b); border-radius: 14px; padding: 18px 20px;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  a.card:hover { border-color: var(--a); transform: translateY(-2px); }
+  .card h2 { font-size: 1.02rem; margin-bottom: 6px; color: #c4b5fd; }
+  .card.lr h2 { color: #fbbf24; }
+  .card .paths { font-size: 0.72rem; color: var(--m); margin-bottom: 10px; line-height: 1.5; }
+  .card .cmd { font-size: 0.76rem; background: #0c1220; padding: 9px 11px; border-radius: 8px; color: #94a3b8; border: 1px solid var(--b); }
+  .card .url { margin-top: 8px; font-size: 0.82rem; color: #38bdf8; }
+  footer { margin-top: 28px; font-size: 0.72rem; color: var(--m); text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Prediction avancement</h1>
+  <p class="sub">Chaque algorithme a son dossier avec <strong>FRONT</strong> (interface Flask) et <strong>MODEL</strong> (pipelines, <code>.pkl</code>, figures). Code partagé : <code>shared/progress_inference.py</code>.</p>
+  <div class="tree">Prediction avancement/<br>
+&nbsp;&nbsp;├── shared/<br>
+&nbsp;&nbsp;├── Random Forest/<br>
+&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;├── FRONT/&nbsp;&nbsp;→ python app.py (port 5002)<br>
+&nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└── MODEL/&nbsp;&nbsp;→ rf_progress_pipeline.py<br>
+&nbsp;&nbsp;└── Régression Linéaire/<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;├── FRONT/&nbsp;&nbsp;→ python app.py (port 5003)<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── MODEL/&nbsp;&nbsp;→ lr_progress_pipeline.py</div>
+  <div class="cards">
+    <a class="card" href="http://127.0.0.1:5002/" target="_blank" rel="noopener">
+      <h2>Random Forest</h2>
+      <div class="paths">FRONT : <strong>Random Forest/FRONT/</strong><br>MODEL : <strong>Random Forest/MODEL/</strong></div>
+      <div class="cmd">cd "Random Forest/FRONT"<br>python app.py</div>
+      <div class="url">→ http://127.0.0.1:5002 · <code>/accueil_progress</code> pour cette page</div>
+    </a>
+    <a class="card lr" href="http://127.0.0.1:5003/" target="_blank" rel="noopener">
+      <h2>Régression linéaire</h2>
+      <div class="paths">FRONT : <strong>Régression Linéaire/FRONT/</strong><br>MODEL : <strong>Régression Linéaire/MODEL/</strong></div>
+      <div class="cmd">cd "Régression Linéaire/FRONT"<br>python app.py</div>
+      <div class="url">→ http://127.0.0.1:5003 · <code>/accueil_progress</code> pour cette page</div>
+    </a>
+  </div>
+  <footer>Entraînement : exécuter les scripts <code>*.py</code> dans chaque dossier MODEL (génère les <code>.pkl</code> localement).</footer>
+</div>
+</body>
+</html>

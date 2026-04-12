@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+.venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# OS / IDE
+.DS_Store
+desktop.ini
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Logs & local
+*.log
+.env
+.env.local
+
+# Cursor (optionnel)
+.cursor/
+
+# Modèles binaires — retirer les deux lignes suivantes si vous ne voulez pas versionner les .pkl
+# *.pkl
