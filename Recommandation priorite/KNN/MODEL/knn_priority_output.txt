@@ -1,0 +1,331 @@
+================================================================================
+KNN - RECOMMANDATION DE PRIORITÉ (BASELINE)
+================================================================================
+
+================================================================================
+1. CHARGEMENT ET INSPECTION DES DONNÉES
+================================================================================
+
+✓ Dataset chargé avec succès: 300 lignes, 20 colonnes
+
+--- Informations du DataFrame ---
+<class 'pandas.DataFrame'>
+RangeIndex: 300 entries, 0 to 299
+Data columns (total 20 columns):
+ #   Column                          Non-Null Count  Dtype  
+---  ------                          --------------  -----  
+ 0   Project ID                      300 non-null    str    
+ 1   Project Name                    300 non-null    str    
+ 2   Project Type                    300 non-null    str    
+ 3   Location                        300 non-null    str    
+ 4   Start Date                      300 non-null    str    
+ 5   End Date                        300 non-null    str    
+ 6   Project Status                  300 non-null    str    
+ 7   Priority                        300 non-null    str    
+ 8   Task ID                         300 non-null    str    
+ 9   Task Name                       300 non-null    str    
+ 10  Task Status                     300 non-null    str    
+ 11  Assigned To                     300 non-null    str    
+ 12  Hours Spent                     300 non-null    int64  
+ 13  Budget                          300 non-null    int64  
+ 14  Actual Cost                     300 non-null    int64  
+ 15  Progress                        300 non-null    float64
+ 16  Planned_Duration_Days           300 non-null    int64  
+ 17  Budget_Utilization              300 non-null    float64
+ 18  Assignee_Historical_Task_Count  300 non-null    int64  
+ 19  Risk_Level                      300 non-null    str    
+dtypes: float64(2), int64(5), str(13)
+memory usage: 47.0 KB
+None
+
+--- Aperçu des premières lignes ---
+  Project ID  ... Risk_Level
+0       P001  ...       High
+1       P001  ...     Medium
+2       P001  ...     Medium
+3       P002  ...        Low
+4       P002  ...        Low
+
+[5 rows x 20 columns]
+
+--- Statistiques descriptives ---
+       Hours Spent  ...  Assignee_Historical_Task_Count
+count   300.000000  ...                      300.000000
+mean     19.210000  ...                       20.836667
+std      11.505382  ...                       14.524687
+min       0.000000  ...                        0.000000
+25%      10.000000  ...                        9.000000
+50%      18.500000  ...                       19.000000
+75%      29.000000  ...                       31.000000
+max      40.000000  ...                       59.000000
+
+[8 rows x 7 columns]
+
+--- Valeurs manquantes ---
+Aucune valeur manquante
+
+--- Doublons ---
+Nombre de doublons: 0
+
+--- Distribution de la cible 'Priority' ---
+Priority
+High      156
+Medium     91
+Low        53
+Name: count, dtype: int64
+
+Proportions:
+Priority
+High      0.520000
+Medium    0.303333
+Low       0.176667
+Name: proportion, dtype: float64
+
+================================================================================
+2. NETTOYAGE DES DONNÉES
+================================================================================
+
+✓ Doublons supprimés: 0 lignes
+
+✓ Aucune colonne constante détectée
+
+--- Traitement des outliers (IQR) ---
+✓ Budget: 0 outliers plafonnés (bornes: [-4151.62, 15751.38])
+✓ Planned_Duration_Days: 2 outliers plafonnés (bornes: [-267.88, 587.12])
+
+✓ Dataset après nettoyage: 300 lignes
+
+================================================================================
+3. ENCODAGE DE LA CIBLE
+================================================================================
+
+Mapping de Priority:
+  Low → 0 (53 instances)
+  Medium → 1 (91 instances)
+  High → 2 (156 instances)
+
+✓ Encodage réussi
+
+================================================================================
+4. SÉPARATION DES FEATURES ET DE LA CIBLE
+================================================================================
+
+✓ Features (X): (300, 3)
+  Colonnes: ['Progress', 'Budget', 'Planned_Duration_Days']
+
+✓ Cible (y): (300,)
+
+================================================================================
+5. SCALING DES FEATURES (OBLIGATOIRE POUR KNN)
+================================================================================
+
+⚠ KNN est très sensible aux échelles des variables
+  Scaling avec StandardScaler avant train/test split
+
+✓ Scaling appliqué
+
+Statistiques après scaling:
+           Progress        Budget  Planned_Duration_Days
+count  3.000000e+02  3.000000e+02           3.000000e+02
+mean  -8.881784e-18  1.006602e-16           4.736952e-17
+std    1.001671e+00  1.001671e+00           1.001671e+00
+min   -1.892370e+00 -1.701757e+00          -1.221178e+00
+25%   -8.436426e-01 -8.557392e-01          -8.636793e-01
+50%    1.307066e-01  4.708737e-02          -2.187448e-01
+75%    1.082742e+00  9.857198e-01           6.723068e-01
+max    1.082742e+00  1.618661e+00           2.976286e+00
+
+================================================================================
+6. DIVISION TRAIN/TEST
+================================================================================
+
+✓ Division effectuée (test_size=0.2, stratifiée)
+
+Train set: 240 samples
+Distribution des classes dans train:
+Priority_encoded
+0     42
+1     73
+2    125
+Name: count, dtype: int64
+
+Test set: 60 samples
+Distribution des classes dans test:
+Priority_encoded
+0    11
+1    18
+2    31
+Name: count, dtype: int64
+
+================================================================================
+7. RECHERCHE DU MEILLEUR K
+================================================================================
+
+Tester k de 1 à 20
+Validation croisée: 3-fold
+Métrique: F1-score macro
+
+k   | F1-macro (CV) | Std
+-----------------------------------
+ 1  | 0.3402        | 0.0372
+ 2  | 0.3557        | 0.0243
+ 3  | 0.3027        | 0.0651
+ 4  | 0.3069        | 0.0238
+ 5  | 0.3092        | 0.0299
+ 6  | 0.3047        | 0.0133
+ 7  | 0.3122        | 0.0333
+ 8  | 0.3196        | 0.0325
+ 9  | 0.2873        | 0.0315
+10  | 0.3094        | 0.0306
+11  | 0.2777        | 0.0194
+12  | 0.3125        | 0.0267
+13  | 0.2922        | 0.0209
+14  | 0.3046        | 0.0276
+15  | 0.2950        | 0.0267
+16  | 0.2719        | 0.0365
+17  | 0.2720        | 0.0280
+18  | 0.2734        | 0.0232
+19  | 0.2639        | 0.0116
+20  | 0.2674        | 0.0104
+
+===================================
+✓ Meilleur k: 2
+✓ F1-score macro (CV): 0.3557
+===================================
+
+✓ Graphique de recherche de k sauvegardé: knn_priority_k_search.png
+
+================================================================================
+8. ENTRAÎNEMENT DU MODÈLE FINAL
+================================================================================
+
+✓ Modèle KNN entraîné avec k=2
+
+================================================================================
+9. ÉVALUATION DU MODÈLE
+================================================================================
+
+✓ Accuracy: 0.4167
+
+--- Métriques par classe ---
+
+Low (0):
+  Precision: 0.3158
+  Recall:    0.5455
+  F1-score:  0.4000
+  Support:   11
+
+Medium (1):
+  Precision: 0.3333
+  Recall:    0.4444
+  F1-score:  0.3810
+  Support:   18
+
+High (2):
+  Precision: 0.6471
+  Recall:    0.3548
+  F1-score:  0.4583
+  Support:   31
+
+--- Métriques macro (moyenne non pondérée) ---
+Precision macro: 0.4321
+Recall macro:    0.4482
+F1-score macro:  0.4131
+
+--- Rapport de classification complet ---
+              precision    recall  f1-score   support
+
+     Low (0)       0.32      0.55      0.40        11
+  Medium (1)       0.33      0.44      0.38        18
+    High (2)       0.65      0.35      0.46        31
+
+    accuracy                           0.42        60
+   macro avg       0.43      0.45      0.41        60
+weighted avg       0.49      0.42      0.42        60
+
+
+--- Matrice de confusion ---
+
+     Predicted
+         Low  Med  High
+Low        6    3    2
+Med        6    8    4
+High       7   13   11
+
+✓ Matrice de confusion sauvegardée: knn_priority_confusion_matrix.png
+
+================================================================================
+10. SAUVEGARDE DU MODÈLE
+================================================================================
+
+✓ Modèle sauvegardé: knn_priority_model.pkl
+✓ Scaler sauvegardé: knn_priority_scaler.pkl
+✓ Features sauvegardées: knn_priority_features.pkl
+✓ Métadonnées sauvegardées: knn_priority_meta.pkl
+
+================================================================================
+11. RÉSUMÉ FINAL
+================================================================================
+
+✓ DATASET
+  Lignes après nettoyage: 300
+  Features utilisées: ['Progress', 'Budget', 'Planned_Duration_Days']
+  Scaling: StandardScaler (OBLIGATOIRE pour KNN)
+
+✓ DISTRIBUTION DES CLASSES
+  Low (0):    53 (17.7%)
+  Medium (1): 91 (30.3%)
+  High (2):   156 (52.0%)
+
+✓ HYPERPARAMÈTRE RETENU
+  Meilleur k: 2
+  F1-score (CV): 0.3557
+
+✓ PERFORMANCES SUR TEST SET
+  Accuracy:        0.4167
+  F1-score macro:  0.4131
+  Precision macro: 0.4321
+  Recall macro:    0.4482
+
+================================================================================
+12. POURQUOI KNN EST UNE BASELINE FAIBLE
+================================================================================
+
+KNN présente plusieurs limitations par rapport à Random Forest:
+
+1. SENSIBILITÉ À L'ÉCHELLE
+   - KNN utilise la distance euclidienne entre points
+   - Nécessite un scaling obligatoire des features
+   - Random Forest n'est pas affecté par l'échelle
+
+2. ABSENCE DE SEUILS NATURELS
+   - KNN vote parmi les k voisins les plus proches
+   - Ne capture pas les seuils de décision complexes
+   - Random Forest crée des règles de décision basées sur des seuils
+
+3. DIFFICULTÉ AVEC LES CLASSES DÉSÉQUILIBRÉES
+   - Dans ce dataset: High=52%, Medium=30%, Low=18%
+   - KNN a tendance à favoriser la classe majoritaire
+   - Random Forest peut mieux équilibrer via le bootstrapping
+
+4. PAS D'INTERPRÉTABILITÉ
+   - KNN ne fournit pas d'importance des features
+   - Impossible de comprendre quels facteurs influencent la priorité
+   - Random Forest donne l'importance de chaque variable
+
+5. SENSIBILITÉ AU BRUIT
+   - KNN peut être perturbé par des points aberrants
+   - Random Forest est robuste grâce à l'agrégation d'arbres
+
+6. SCALABILITÉ
+   - KNN doit calculer la distance à tous les points d'entraînement
+   - Lent pour de grands datasets
+   - Random Forest est plus efficace en prédiction
+
+Ces limitations font de KNN une baseline faible, utile pour
+quantifier l'amélioration apportée par Random Forest.
+
+
+================================================================================
+✓ PIPELINE KNN TERMINÉ AVEC SUCCÈS!
+================================================================================

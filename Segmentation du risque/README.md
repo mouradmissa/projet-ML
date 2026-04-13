@@ -55,7 +55,7 @@ ML/
 │   │   ├── knn_risk_pca.pkl               # PCA (95% variance)
 │   │   └── knn_risk_label_encoder.pkl     # LabelEncoder cible
 │   └── frontend/
-│       ├── app_risk.py                    # API Flask (port 5000)
+│       ├── app_risk.py                    # API Flask (port 5011 par défaut)
 │       └── frontend_risk.html             # Interface web
 │
 ├── random_forest/                          # Algorithme 2 : Random Forest
@@ -67,7 +67,7 @@ ML/
 │   │   ├── rf_risk_importances.pkl        # Importances des variables
 │   │   └── rf_risk_label_encoder.pkl      # LabelEncoder cible
 │   └── frontend/
-│       ├── app_rf_risk.py                 # API Flask (port 5001)
+│       ├── app_rf_risk.py                 # API Flask (port 5012 par défaut)
 │       └── frontend_rf_risk.html          # Interface web
 │
 ├── decision_tree/                          # Algorithme 3 : Decision Tree
@@ -79,7 +79,7 @@ ML/
 │   │   ├── dt_risk_importances.pkl        # Importances des variables
 │   │   └── dt_risk_label_encoder.pkl      # LabelEncoder cible
 │   └── frontend/
-│       ├── app_dt_risk.py                 # API Flask (port 5003)
+│       ├── app_dt_risk.py                 # API Flask (port 5013 par défaut)
 │       └── frontend_dt_risk.html          # Interface web
 │
 └── combined/                               # Comparateur unifié (3 modèles)
@@ -167,19 +167,25 @@ python decision_tree/model/dt_risk_test.py
 
 ### 3. Lancer un frontend individuel
 
+Ports par défaut choisis pour **ne pas entrer en conflit** avec les autres modules du dépôt (priorité : 5000–5001, avancement : 5002–5003). Variables d’environnement : `RISK_KNN_PORT`, `RISK_RF_PORT`, `RISK_DT_PORT`.
+
 ```bash
-python knn/frontend/app_risk.py              # http://localhost:5000
-python random_forest/frontend/app_rf_risk.py  # http://localhost:5001
-python decision_tree/frontend/app_dt_risk.py  # http://localhost:5003
+python knn/frontend/app_risk.py               # http://127.0.0.1:5011
+python random_forest/frontend/app_rf_risk.py  # http://127.0.0.1:5012
+python decision_tree/frontend/app_dt_risk.py   # http://127.0.0.1:5013
 ```
 
 ### 4. Lancer le comparateur unifié (recommandé)
 
 ```bash
-python combined/app_combined.py               # http://localhost:5005
+python combined/app_combined.py               # http://127.0.0.1:5005
 ```
 
-Ouvrir **http://localhost:5005** dans un navigateur.
+Ouvrir **http://127.0.0.1:5005** dans un navigateur.
+
+### 5. Hub global (tout le projet ML)
+
+Depuis la racine du dépôt, le dossier **`hub_global/`** propose une page unique (port **5080**) avec onglets : test individuel des trois algorithmes risque, comparateur, avancement, priorité. Voir le **`README.md`** à la racine `ML/`.
 
 ---
 

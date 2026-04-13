@@ -31,10 +31,13 @@ def convert_numpy(obj):
 
 app = Flask(__name__)
 
-ROOT = r"C:\Users\MSI\Desktop\ML"
-DT_DIR = os.path.join(ROOT, "decision_tree")
-MODEL_DIR = os.path.join(DT_DIR, "model")
-FRONTEND_DIR = os.path.join(DT_DIR, "frontend")
+_THIS = os.path.dirname(os.path.abspath(__file__))
+_DT_ROOT = os.path.dirname(_THIS)
+MODEL_DIR = os.path.join(_DT_ROOT, "model")
+FRONTEND_DIR = _THIS
+_SEG_ROOT = os.path.dirname(_DT_ROOT)
+_ML_ROOT = os.path.dirname(_SEG_ROOT)
+ROOT = _ML_ROOT
 
 model = joblib.load(os.path.join(MODEL_DIR, "dt_risk_model.pkl"))
 le_target = joblib.load(os.path.join(MODEL_DIR, "dt_risk_label_encoder.pkl"))
@@ -193,5 +196,6 @@ def predict():
 
 
 if __name__ == "__main__":
-    print("Serveur Decision Tree Risk demarre sur http://localhost:5003")
-    app.run(debug=False, port=5003)
+    _port = int(os.environ.get("RISK_DT_PORT", "5013"))
+    print("DT Risk — http://127.0.0.1:%d" % _port)
+    app.run(debug=False, host="127.0.0.1", port=_port, use_reloader=False)

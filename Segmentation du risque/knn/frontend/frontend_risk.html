@@ -372,6 +372,18 @@ function fillScenario(t){
 
 /* ========== PREDICT ========== */
 const RISK_DESC={High:'Situation critique. Intervention recommand\u00e9e.',Medium:'Vigilance requise. Surveiller les indicateurs.',Low:'Situation sous contr\u00f4le.'};
+const API = window.location.origin;
+async function readJsonResponse(r) {
+  const ct = (r.headers.get('content-type') || '').toLowerCase();
+  const text = await r.text();
+  let parsed = null;
+  try { parsed = JSON.parse(text); } catch (_) {}
+  if (!r.ok) throw new Error((parsed && parsed.error) ? parsed.error : ('HTTP ' + r.status));
+  if (!ct.includes('application/json') || parsed === null) {
+    throw new Error('Réponse non-JSON. Ouvrez cette page via Flask (python app_risk.py), pas en fichier local.');
+  }
+  return parsed;
+}
 async function predict(){
   const btn=document.getElementById('btnPredict');
   btn.classList.add('loading'); btn.textContent='Analyse...';
@@ -390,8 +402,8 @@ async function predict(){
     progress:(+document.getElementById('progress').value||0)/100,
   };
   try{
-    const r=await fetch('/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const d=await r.json();
+    const r=await fetch(API+'/predict',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await readJsonResponse(r);
     const panel=document.getElementById('resultPanel');
     panel.classList.remove('visible'); void panel.offsetWidth; panel.classList.add('visible');
     const risk=d.risk_level;
@@ -414,8 +426,8 @@ async function predict(){
 let metricsLoaded = false;
 async function loadMetrics(){
   try{
-    const r=await fetch('/metrics');
-    const m=await r.json();
+    const r=await fetch(API+'/metrics');
+    const m=await readJsonResponse(r);
     document.getElementById('perfLoading').style.display='none';
     document.getElementById('perfContent').style.display='block';
     metricsLoaded=true;

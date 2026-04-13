@@ -1,0 +1,284 @@
+================================================================================
+RANDOM FOREST - RECOMMANDATION DE PRIORITÉ
+================================================================================
+
+================================================================================
+1. CHARGEMENT ET INSPECTION DES DONNÉES
+================================================================================
+
+✓ Dataset chargé avec succès: 300 lignes, 20 colonnes
+
+--- Informations du DataFrame ---
+<class 'pandas.DataFrame'>
+RangeIndex: 300 entries, 0 to 299
+Data columns (total 20 columns):
+ #   Column                          Non-Null Count  Dtype  
+---  ------                          --------------  -----  
+ 0   Project ID                      300 non-null    str    
+ 1   Project Name                    300 non-null    str    
+ 2   Project Type                    300 non-null    str    
+ 3   Location                        300 non-null    str    
+ 4   Start Date                      300 non-null    str    
+ 5   End Date                        300 non-null    str    
+ 6   Project Status                  300 non-null    str    
+ 7   Priority                        300 non-null    str    
+ 8   Task ID                         300 non-null    str    
+ 9   Task Name                       300 non-null    str    
+ 10  Task Status                     300 non-null    str    
+ 11  Assigned To                     300 non-null    str    
+ 12  Hours Spent                     300 non-null    int64  
+ 13  Budget                          300 non-null    int64  
+ 14  Actual Cost                     300 non-null    int64  
+ 15  Progress                        300 non-null    float64
+ 16  Planned_Duration_Days           300 non-null    int64  
+ 17  Budget_Utilization              300 non-null    float64
+ 18  Assignee_Historical_Task_Count  300 non-null    int64  
+ 19  Risk_Level                      300 non-null    str    
+dtypes: float64(2), int64(5), str(13)
+memory usage: 47.0 KB
+None
+
+--- Aperçu des premières lignes ---
+  Project ID  ... Risk_Level
+0       P001  ...       High
+1       P001  ...     Medium
+2       P001  ...     Medium
+3       P002  ...        Low
+4       P002  ...        Low
+
+[5 rows x 20 columns]
+
+--- Statistiques descriptives ---
+       Hours Spent  ...  Assignee_Historical_Task_Count
+count   300.000000  ...                      300.000000
+mean     19.210000  ...                       20.836667
+std      11.505382  ...                       14.524687
+min       0.000000  ...                        0.000000
+25%      10.000000  ...                        9.000000
+50%      18.500000  ...                       19.000000
+75%      29.000000  ...                       31.000000
+max      40.000000  ...                       59.000000
+
+[8 rows x 7 columns]
+
+--- Valeurs manquantes ---
+Aucune valeur manquante
+
+--- Doublons ---
+Nombre de doublons: 0
+
+--- Distribution de la cible 'Priority' ---
+Priority
+High      156
+Medium     91
+Low        53
+Name: count, dtype: int64
+
+Proportions:
+Priority
+High      0.520000
+Medium    0.303333
+Low       0.176667
+Name: proportion, dtype: float64
+
+================================================================================
+2. NETTOYAGE DES DONNÉES
+================================================================================
+
+✓ Doublons supprimés: 0 lignes
+
+✓ Aucune colonne constante détectée
+
+--- Traitement des outliers (IQR) ---
+✓ Budget: 0 outliers plafonnés (bornes: [-4151.62, 15751.38])
+✓ Planned_Duration_Days: 2 outliers plafonnés (bornes: [-267.88, 587.12])
+
+✓ Dataset après nettoyage: 300 lignes
+
+================================================================================
+3. ENCODAGE DE LA CIBLE
+================================================================================
+
+Mapping de Priority:
+  Low → 0 (53 instances)
+  Medium → 1 (91 instances)
+  High → 2 (156 instances)
+
+✓ Encodage réussi
+Distribution de Priority_encoded:
+Priority_encoded
+0     53
+1     91
+2    156
+Name: count, dtype: int64
+
+================================================================================
+4. SÉPARATION DES FEATURES ET DE LA CIBLE
+================================================================================
+
+✓ Features (X): (300, 3)
+  Colonnes: ['Progress', 'Budget', 'Planned_Duration_Days']
+
+✓ Cible (y): (300,)
+  Distribution:
+Priority_encoded
+0     53
+1     91
+2    156
+Name: count, dtype: int64
+
+================================================================================
+5. DIVISION TRAIN/TEST
+================================================================================
+
+✓ Division effectuée (test_size=0.2, stratifiée)
+
+Train set: 240 samples
+Distribution des classes dans train:
+Priority_encoded
+0     42
+1     73
+2    125
+Name: count, dtype: int64
+
+Test set: {X_test.shape[0]} samples
+Distribution des classes dans test:
+Priority_encoded
+0    11
+1    18
+2    31
+Name: count, dtype: int64
+
+================================================================================
+6. SCALING (non appliqué pour Random Forest)
+================================================================================
+
+✓ Random Forest n'est pas sensible à l'échelle des features
+  Scaling non nécessaire (contrairement à KNN)
+
+================================================================================
+7. ENTRAÎNEMENT ET OPTIMISATION (GRIDSEARCHCV)
+================================================================================
+
+--- Modèle de base ---
+✓ F1-score macro (modèle de base): 0.3966
+
+--- Optimisation des hyperparamètres ---
+Grille de recherche:
+  n_estimators: [50, 100, 200]
+  max_depth: [5, 10, None]
+  min_samples_split: [2, 5]
+
+Entraînement en cours (validation croisée 3-fold)...
+Fitting 3 folds for each of 18 candidates, totalling 54 fits
+
+✓ Optimisation terminée
+
+Meilleurs hyperparamètres:
+  max_depth: 10
+  min_samples_split: 2
+  n_estimators: 200
+
+Meilleur F1-score macro (CV): 0.3434
+
+================================================================================
+8. ÉVALUATION DU MODÈLE OPTIMISÉ
+================================================================================
+
+✓ Accuracy: 0.5333
+
+--- Métriques par classe ---
+
+Low (0):
+  Precision: 0.2857
+  Recall:    0.1818
+  F1-score:  0.2222
+  Support:   11
+
+Medium (1):
+  Precision: 0.4444
+  Recall:    0.2222
+  F1-score:  0.2963
+  Support:   18
+
+High (2):
+  Precision: 0.5909
+  Recall:    0.8387
+  F1-score:  0.6933
+  Support:   31
+
+--- Métriques macro (moyenne non pondérée) ---
+Precision macro: 0.4404
+Recall macro:    0.4143
+F1-score macro:  0.4040
+
+--- Rapport de classification complet ---
+              precision    recall  f1-score   support
+
+     Low (0)       0.29      0.18      0.22        11
+  Medium (1)       0.44      0.22      0.30        18
+    High (2)       0.59      0.84      0.69        31
+
+    accuracy                           0.53        60
+   macro avg       0.44      0.41      0.40        60
+weighted avg       0.49      0.53      0.49        60
+
+
+--- Matrice de confusion ---
+
+     Predicted
+         Low  Med  High
+Low        2    2    7
+Med        3    4   11
+High       2    3   26
+
+✓ Matrice de confusion sauvegardée: rf_priority_confusion_matrix.png
+
+--- Importance des features ---
+                 Feature  Importance
+1                 Budget    0.392214
+2  Planned_Duration_Days    0.344436
+0               Progress    0.263350
+
+✓ Importance des features sauvegardée: rf_priority_feature_importance.png
+
+================================================================================
+9. SAUVEGARDE DU MODÈLE
+================================================================================
+
+✓ Modèle sauvegardé: rf_priority_model.pkl
+✓ Features sauvegardées: rf_priority_features.pkl
+✓ Métadonnées sauvegardées: rf_priority_meta.pkl
+
+================================================================================
+10. RÉSUMÉ FINAL
+================================================================================
+
+✓ DATASET
+  Lignes après nettoyage: 300
+  Features utilisées: ['Progress', 'Budget', 'Planned_Duration_Days']
+
+✓ DISTRIBUTION DES CLASSES
+  Low (0):    53 (17.7%)
+  Medium (1): 91 (30.3%)
+  High (2):   156 (52.0%)
+
+✓ HYPERPARAMÈTRES RETENUS
+  max_depth: 10
+  min_samples_split: 2
+  n_estimators: 200
+
+✓ PERFORMANCES
+  Accuracy:       0.5333
+  F1-score macro: 0.4040
+  Precision macro: 0.4404
+  Recall macro:    0.4143
+
+✓ IMPORTANCE DES VARIABLES
+  Budget: 0.3922
+  Planned_Duration_Days: 0.3444
+  Progress: 0.2633
+
+================================================================================
+✓ PIPELINE TERMINÉ AVEC SUCCÈS!
+================================================================================

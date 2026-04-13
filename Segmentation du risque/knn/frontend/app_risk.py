@@ -13,10 +13,13 @@ warnings.filterwarnings("ignore")
 
 app = Flask(__name__)
 
-ROOT = r"C:\Users\MSI\Desktop\ML"
-KNN_DIR = os.path.join(ROOT, "knn")
-MODEL_DIR = os.path.join(KNN_DIR, "model")
-FRONTEND_DIR = os.path.join(KNN_DIR, "frontend")
+_THIS = os.path.dirname(os.path.abspath(__file__))
+_KNN_ROOT = os.path.dirname(_THIS)
+MODEL_DIR = os.path.join(_KNN_ROOT, "model")
+FRONTEND_DIR = _THIS
+_SEG_ROOT = os.path.dirname(_KNN_ROOT)
+_ML_ROOT = os.path.dirname(_SEG_ROOT)
+ROOT = _ML_ROOT
 
 model = joblib.load(os.path.join(MODEL_DIR, "knn_risk_model.pkl"))
 scaler = joblib.load(os.path.join(MODEL_DIR, "knn_risk_scaler.pkl"))
@@ -207,5 +210,6 @@ def predict():
 
 
 if __name__ == "__main__":
-    print("Serveur demarre sur http://localhost:5000")
-    app.run(debug=False, port=5000)
+    _port = int(os.environ.get("RISK_KNN_PORT", "5011"))
+    print("KNN Risk — http://127.0.0.1:%d" % _port)
+    app.run(debug=False, host="127.0.0.1", port=_port, use_reloader=False)

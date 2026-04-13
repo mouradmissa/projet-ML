@@ -33,11 +33,13 @@ def convert_numpy(obj):
 
 app = Flask(__name__)
 
-ROOT = r"C:\Users\MSI\Desktop\ML"
-COMBINED_DIR = os.path.join(ROOT, "combined")
+# Racine "Segmentation du risque" puis sous-dossiers knn / random_forest / decision_tree
+_SEG_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+_ML_ROOT = os.path.dirname(_SEG_ROOT)
+COMBINED_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # ===================== LOAD KNN =====================
-KNN_MODEL_DIR = os.path.join(ROOT, "knn", "model")
+KNN_MODEL_DIR = os.path.join(_SEG_ROOT, "knn", "model")
 knn_model = joblib.load(os.path.join(KNN_MODEL_DIR, "knn_risk_model.pkl"))
 knn_scaler = joblib.load(os.path.join(KNN_MODEL_DIR, "knn_risk_scaler.pkl"))
 knn_le = joblib.load(os.path.join(KNN_MODEL_DIR, "knn_risk_label_encoder.pkl"))
@@ -61,13 +63,13 @@ KNN_FEATURES = [
 KNN_CLIP = {"Actual Cost": (0, 9474.03), "Planned_Duration_Days": (4, 572.05), "Budget_Utilization": (0, 2.03)}
 
 # ===================== LOAD RANDOM FOREST =====================
-RF_MODEL_DIR = os.path.join(ROOT, "random_forest", "model")
+RF_MODEL_DIR = os.path.join(_SEG_ROOT, "random_forest", "model")
 rf_model = joblib.load(os.path.join(RF_MODEL_DIR, "rf_risk_model.pkl"))
 rf_le = joblib.load(os.path.join(RF_MODEL_DIR, "rf_risk_label_encoder.pkl"))
 rf_features = joblib.load(os.path.join(RF_MODEL_DIR, "rf_risk_features.pkl"))
 
 # ===================== LOAD DECISION TREE =====================
-DT_MODEL_DIR = os.path.join(ROOT, "decision_tree", "model")
+DT_MODEL_DIR = os.path.join(_SEG_ROOT, "decision_tree", "model")
 dt_model = joblib.load(os.path.join(DT_MODEL_DIR, "dt_risk_model.pkl"))
 dt_le = joblib.load(os.path.join(DT_MODEL_DIR, "dt_risk_label_encoder.pkl"))
 dt_features = joblib.load(os.path.join(DT_MODEL_DIR, "dt_risk_features.pkl"))
@@ -105,7 +107,14 @@ def index():
 
 @app.route("/predict_all", methods=["POST"])
 def predict_all():
-    data = request.json
+    data = request.get_json(silent=True) or {}
+    try:
+        return jsonify(convert_numpy(_predict_all_core(data)))
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+def _predict_all_core(data):
     results = {}
 
     # --- KNN ---
@@ -154,14 +163,14 @@ def predict_all():
     unanimity = len(set(votes)) == 1
     results["consensus"] = {"risk_level": consensus, "unanimous": unanimity, "votes": votes}
 
-    return jsonify(convert_numpy(results))
+    return results
 
 
 METRICS_CACHE = {}
 
 
 def compute_metrics_all():
-    df_raw = pd.read_csv(os.path.join(ROOT, "Project-Management-2-enriched.csv"))
+    df_raw = pd.read_csv(os.path.join(_ML_ROOT, "Project-Management-2-enriched.csv"))
     n_total = len(df_raw)
 
     cols_sup_10 = [c for c in df_raw.select_dtypes(include="object").columns

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hub ML — 3 modèles</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0c1222;
+      --card: #151d33;
+      --border: #2a3550;
+      --text: #e8eef7;
+      --muted: #8b9bb8;
+      --accent: #6366f1;
+      --accent2: #22d3ee;
+      --input-bg: #0f1629;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    header {
+      flex-shrink: 0;
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(21, 29, 51, 0.95);
+    }
+    .header-inner { max-width: 1400px; margin: 0 auto; }
+    h1 {
+      font-size: 1.35rem;
+      font-weight: 800;
+      background: linear-gradient(90deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 6px;
+    }
+    .tagline { font-size: 0.88rem; color: var(--muted); line-height: 1.5; max-width: 720px; }
+    .host-badge {
+      display: inline-block; margin-top: 10px; font-size: 0.72rem;
+      padding: 4px 10px; border-radius: 8px; background: var(--input-bg);
+      border: 1px solid var(--border); color: var(--accent2); font-family: ui-monospace, monospace;
+    }
+
+    .tabs {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-top: 16px;
+    }
+    .tabs button {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.82rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .tabs button:hover { color: var(--text); border-color: var(--accent); }
+    .tabs button.active {
+      background: linear-gradient(90deg, var(--accent), #4f46e5);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    .subtabs {
+      display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;
+      max-width: 1400px; margin-left: auto; margin-right: auto; width: 100%;
+    }
+    .subtabs button {
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--muted);
+      padding: 9px 16px;
+      border-radius: 9px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.78rem;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s, background 0.2s;
+    }
+    .subtabs button:hover { color: var(--text); border-color: var(--accent2); }
+    .subtabs button.active {
+      background: rgba(99, 102, 241, 0.22);
+      color: var(--accent2);
+      border-color: var(--accent);
+    }
+    .subtabs button.tab-compare.active {
+      background: linear-gradient(90deg, var(--accent), #4f46e5);
+      color: #fff;
+      border-color: transparent;
+    }
+
+    details.startup {
+      margin-top: 12px; max-width: 900px;
+    }
+    details.startup summary {
+      cursor: pointer; font-size: 0.8rem; color: var(--accent2); font-weight: 600;
+      list-style: none;
+    }
+    details.startup summary::-webkit-details-marker { display: none; }
+    .cmd-block {
+      margin-top: 10px; font-size: 0.72rem; color: var(--muted);
+      background: var(--input-bg); border: 1px solid var(--border);
+      border-radius: 10px; padding: 12px 14px; line-height: 1.65;
+      font-family: ui-monospace, Consolas, monospace; overflow-x: auto;
+    }
+    .cmd-block div { margin-bottom: 6px; }
+    .cmd-block div:last-child { margin-bottom: 0; }
+    .cmd-block strong { color: var(--text); }
+
+    main {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+    .panel { display: none; flex: 1; flex-direction: column; min-height: 0; padding: 16px 24px 24px; }
+    .panel.active { display: flex; }
+    .panel-head {
+      max-width: 1400px; width: 100%; margin: 0 auto 12px;
+    }
+    .panel-head h2 { font-size: 1rem; color: var(--accent2); margin-bottom: 4px; }
+    .panel-head p { font-size: 0.85rem; color: var(--muted); line-height: 1.45; }
+
+    .frame-grid {
+      flex: 1;
+      display: grid;
+      gap: 12px;
+      min-height: 0;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .frame-grid.one { grid-template-columns: 1fr; }
+    .frame-grid.two { grid-template-columns: 1fr 1fr; }
+    @media (max-width: 900px) {
+      .frame-grid.two { grid-template-columns: 1fr; }
+    }
+
+    .frame-box {
+      display: flex;
+      flex-direction: column;
+      min-height: 320px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: var(--card);
+    }
+    .frame-box.full-height { min-height: calc(100vh - 220px); }
+    .frame-grid.two .frame-box { min-height: calc(100vh - 240px); }
+    @media (max-width: 900px) {
+      .frame-box.full-height, .frame-grid.two .frame-box { min-height: 55vh; }
+    }
+    .frame-toolbar {
+      display: flex; align-items: center; justify-content: space-between;
+      flex-wrap: wrap; gap: 8px;
+      padding: 8px 12px;
+      border-bottom: 1px solid var(--border);
+      background: var(--input-bg);
+      font-size: 0.78rem;
+    }
+    .frame-toolbar span { font-weight: 700; color: var(--text); }
+    .frame-toolbar a {
+      color: var(--accent2); text-decoration: none; font-weight: 600;
+    }
+    .frame-toolbar a:hover { text-decoration: underline; }
+    .frame-toolbar .port { color: var(--muted); font-family: monospace; font-size: 0.72rem; }
+
+    iframe {
+      flex: 1;
+      width: 100%;
+      border: none;
+      background: #0a0e18;
+    }
+
+    .hint {
+      max-width: 1400px; margin: 0 auto 10px; width: 100%;
+      font-size: 0.75rem; color: var(--muted); line-height: 1.5;
+    }
+
+    footer {
+      flex-shrink: 0;
+      text-align: center;
+      padding: 12px;
+      font-size: 0.72rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-inner">
+      <h1>Hub ML — gestion de projet</h1>
+      <p class="tagline">
+        <strong>Risque</strong> : chaque algorithme a son interface, puis <em>Comparer les 3</em>.
+        <strong>Avancement</strong> et <strong>priorité</strong> : deux iframes côte à côte comme avant.
+      </p>
+      <span class="host-badge">Backends : {{ cfg.host }} · Hub : port {{ hub_port }}</span>
+
+      <div class="tabs" role="tablist">
+        <button type="button" class="active" id="tab-m1" data-panel="panel-m1" aria-selected="true">
+          1. Segmentation du risque
+        </button>
+        <button type="button" id="tab-m2" data-panel="panel-m2" aria-selected="false">
+          2. Prédiction d’avancement
+        </button>
+        <button type="button" id="tab-m3" data-panel="panel-m3" aria-selected="false">
+          3. Recommandation de priorité
+        </button>
+      </div>
+
+      <details class="startup">
+        <summary>Démarrage des serveurs (PowerShell, depuis le dossier ML)</summary>
+        <div class="cmd-block">
+          <div><strong>Modèle 1 — risque</strong> (4 terminaux)</div>
+          <div>cd "Segmentation du risque/knn/frontend"; python app_risk.py&nbsp;&nbsp;→ 5011</div>
+          <div>cd "Segmentation du risque/random_forest/frontend"; python app_rf_risk.py&nbsp;&nbsp;→ 5012</div>
+          <div>cd "Segmentation du risque/decision_tree/frontend"; python app_dt_risk.py&nbsp;&nbsp;→ 5013</div>
+          <div>cd "Segmentation du risque/combined"; python app_combined.py&nbsp;&nbsp;→ 5005 (comparateur)</div>
+          <div><strong>Modèle 2</strong> — ports 5002 et 5003</div>
+          <div>cd "Prediction avancement/Random Forest/FRONT"; python app.py</div>
+          <div>cd "Prediction avancement/Régression Linéaire/FRONT"; python app.py</div>
+          <div><strong>Modèle 3</strong> — ports 5000 et 5001</div>
+          <div>cd "Recommandation priorite/Random Forest/FRONT"; python app.py</div>
+          <div>cd "Recommandation priorite/KNN/FRONT"; python app.py</div>
+        </div>
+      </details>
+    </div>
+  </header>
+
+  <main>
+    {% set m1first = cfg.model1.modes[0] %}
+    <div class="panel active" id="panel-m1" role="tabpanel">
+      <div class="panel-head">
+        <h2>{{ cfg.model1.title }}</h2>
+        <p>{{ cfg.model1.subtitle }}</p>
+      </div>
+      <p class="hint">Choisissez un onglet ci-dessous : trois interfaces dédiées, puis <strong>Comparer les 3</strong> pour l’écran combiné (port 5005). Si l’iframe est vide, démarrez le serveur correspondant.</p>
+      <div class="subtabs" id="subtabs-m1" role="tablist">
+        {% for m in cfg.model1.modes %}
+        <button type="button"
+          class="{% if loop.first %}active{% endif %}{% if m.id == 'compare' %} tab-compare{% endif %}"
+          data-url="{{ m.url }}"
+          data-port="{{ m.port }}"
+          data-label="{{ m.label }}"
+          aria-selected="{{ 'true' if loop.first else 'false' }}">{{ m.label }}</button>
+        {% endfor %}
+      </div>
+      <div class="frame-grid one">
+        <div class="frame-box full-height">
+          <div class="frame-toolbar">
+            <span id="m1-toolbar-label">{{ m1first.label }}</span>
+            <div>
+              <span class="port" id="m1-toolbar-port">:{{ m1first.port }}</span>
+              &nbsp;·&nbsp;
+              <a id="m1-open-link" href="{{ m1first.url }}" target="_blank" rel="noopener">Ouvrir dans un onglet</a>
+            </div>
+          </div>
+          <iframe id="iframe-m1" title="{{ m1first.label }}" src="{{ m1first.url }}" loading="lazy"></iframe>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="panel-m2" role="tabpanel" hidden>
+      <div class="panel-head">
+        <h2>{{ cfg.model2.title }}</h2>
+        <p>{{ cfg.model2.subtitle }}</p>
+      </div>
+      <p class="hint">Deux serveurs distincts : lancez les deux lignes « FRONT » du modèle 2 dans l’encadré ci-dessus.</p>
+      <div class="frame-grid two">
+        {% for f in cfg.model2.frames %}
+        <div class="frame-box">
+          <div class="frame-toolbar">
+            <span>{{ f.label }}</span>
+            <div>
+              <span class="port">:{{ f.port }}</span>
+              &nbsp;·&nbsp;
+              <a href="{{ f.url }}" target="_blank" rel="noopener">Ouvrir</a>
+            </div>
+          </div>
+          <iframe title="{{ f.label }}" src="{{ f.url }}" loading="lazy"></iframe>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="panel" id="panel-m3" role="tabpanel" hidden>
+      <div class="panel-head">
+        <h2>{{ cfg.model3.title }}</h2>
+        <p>{{ cfg.model3.subtitle }}</p>
+      </div>
+      <p class="hint">Random Forest (5000) et KNN (5001) : démarrez les deux applications Flask.</p>
+      <div class="frame-grid two">
+        {% for f in cfg.model3.frames %}
+        <div class="frame-box">
+          <div class="frame-toolbar">
+            <span>{{ f.label }}</span>
+            <div>
+              <span class="port">:{{ f.port }}</span>
+              &nbsp;·&nbsp;
+              <a href="{{ f.url }}" target="_blank" rel="noopener">Ouvrir</a>
+            </div>
+          </div>
+          <iframe title="{{ f.label }}" src="{{ f.url }}" loading="lazy"></iframe>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    Hub <code>hub_global/app.py</code> · Variable d’environnement <code>ML_HUB_BACKEND_HOST</code> pour changer l’hôte des iframes
+  </footer>
+
+  <script>
+    (function () {
+      var buttons = document.querySelectorAll('.header-inner > .tabs > button');
+      var panels = document.querySelectorAll('.panel');
+      buttons.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var id = btn.getAttribute('data-panel');
+          buttons.forEach(function (b) {
+            b.classList.toggle('active', b === btn);
+            b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+          });
+          panels.forEach(function (p) {
+            var on = p.id === id;
+            p.classList.toggle('active', on);
+            if (on) p.removeAttribute('hidden');
+            else p.setAttribute('hidden', '');
+          });
+        });
+      });
+
+      var sub = document.querySelectorAll('#subtabs-m1 button');
+      var iframe = document.getElementById('iframe-m1');
+      var lbl = document.getElementById('m1-toolbar-label');
+      var lnk = document.getElementById('m1-open-link');
+      var portEl = document.getElementById('m1-toolbar-port');
+      if (sub.length && iframe && lbl && lnk && portEl) {
+        sub.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            sub.forEach(function (b) {
+              b.classList.toggle('active', b === btn);
+              b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+            });
+            iframe.src = btn.getAttribute('data-url');
+            lbl.textContent = btn.getAttribute('data-label');
+            portEl.textContent = ':' + btn.getAttribute('data-port');
+            lnk.href = btn.getAttribute('data-url');
+            iframe.title = btn.getAttribute('data-label');
+          });
+        });
+      }
+    })();
+  </script>
+</body>
+</html>

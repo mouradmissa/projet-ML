@@ -260,6 +260,22 @@ const ALGOS=[
 const RISK_DESC={High:'Situation critique.',Medium:'Vigilance requise.',Low:'Sous contr\u00f4le.'};
 const RISK_CLR={High:'var(--rh)',Medium:'var(--rm)',Low:'var(--rl)'};
 
+const API = window.location.origin;
+async function readJsonResponse(r) {
+  const ct = (r.headers.get('content-type') || '').toLowerCase();
+  const text = await r.text();
+  let parsed = null;
+  try { parsed = JSON.parse(text); } catch (_) { /* not JSON */ }
+  if (!r.ok) {
+    const msg = (parsed && parsed.error) ? parsed.error : ('HTTP ' + r.status);
+    throw new Error(msg);
+  }
+  if (!ct.includes('application/json') || parsed === null) {
+    throw new Error('Réponse non-JSON (souvent une page HTML d\'erreur). Utilisez l\'URL Flask (ex. http://127.0.0.1:5005), pas un fichier ouvert en local.');
+  }
+  return parsed;
+}
+
 function switchTab(id){
   document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',(i===0&&id==='predict')||(i===1&&id==='performance')));
   document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
@@ -312,8 +328,8 @@ async function predictAll(){
     progress:(+document.getElementById('progress').value||0)/100,
   };
   try{
-    const r=await fetch('/predict_all',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    const d=await r.json();
+    const r=await fetch(API+'/predict_all',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await readJsonResponse(r);
 
     renderAlgoResult('res-knn',ALGOS[0],d.knn);
     renderAlgoResult('res-rf',ALGOS[1],d.rf);
@@ -344,7 +360,7 @@ async function predictAll(){
 let metricsLoaded=false;
 async function loadMetrics(){
   try{
-    const r=await fetch('/metrics');const m=await r.json();
+    const r=await fetch(API+'/metrics');const m=await readJsonResponse(r);
     document.getElementById('perfLoading').style.display='none';
     document.getElementById('perfContent').style.display='block';
     metricsLoaded=true;

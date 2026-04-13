@@ -265,6 +265,19 @@ function fillEx(key) {
   }
 }
 
+const API = window.location.origin;
+async function readJsonResponse(r) {
+  const ct = (r.headers.get('content-type') || '').toLowerCase();
+  const text = await r.text();
+  let parsed = null;
+  try { parsed = JSON.parse(text); } catch (_) {}
+  if (!r.ok) throw new Error((parsed && parsed.error) ? parsed.error : ('HTTP ' + r.status));
+  if (!ct.includes('application/json') || parsed === null) {
+    throw new Error('Réponse non-JSON (page HTML). Utilisez Flask : python app.py dans Random Forest/FRONT.');
+  }
+  return parsed;
+}
+
 async function doPredict() {
   const btn = document.getElementById('btnPred');
   const err = document.getElementById('predErr');
@@ -285,9 +298,8 @@ async function doPredict() {
     assignee_historical_task_count: +document.getElementById('history_count').value || 0
   };
   try {
-    const r = await fetch('/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-    const d = await r.json().catch(function () { return {}; });
-    if (!r.ok) throw new Error(d.error || ('HTTP ' + r.status));
+    const r = await fetch(API + '/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+    const d = await readJsonResponse(r);
     const p = d.progress_percent;
     document.getElementById('outPct').textContent = p + ' %';
     document.getElementById('outBar').style.width = Math.min(100, Math.max(0, p)) + '%';
@@ -308,9 +320,8 @@ async function loadPerf() {
   const body = document.getElementById('perfBody');
   err.style.display = 'none';
   try {
-    const r = await fetch('/meta');
-    if (!r.ok) throw new Error('HTTP ' + r.status);
-    const m = await r.json();
+    const r = await fetch(API + '/meta');
+    const m = await readJsonResponse(r);
     document.getElementById('mR2').textContent = (m.r2_test != null) ? m.r2_test.toFixed(4) : '—';
     document.getElementById('mRmse').textContent = (m.rmse_test != null) ? m.rmse_test.toFixed(4) : '—';
     document.getElementById('mMae').textContent = (m.mae_test != null) ? m.mae_test.toFixed(4) : '—';
