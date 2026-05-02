@@ -1,18 +1,21 @@
 """
-Hub global — les 3 familles de modèles ML (interfaces Flask existantes).
+Hub global — modèles ML gestion de projet (interfaces Flask).
 
 Lancer depuis ce dossier :
   python app.py
 
 Puis ouvrir http://127.0.0.1:5080
 
-Prérequis : démarrer chaque backend sur son port (voir panneau « Démarrage » sur la page).
+L’assignation (Random Forest) est intégrée au hub : pas de serveur séparé pour l’onglet 4
+(prérequis : entraîner le modèle et fichiers .pkl dans Recommandation assignation/.../MODEL/).
+Les autres modèles utilisent toujours leurs ports dédiés (voir page).
 """
 from __future__ import annotations
 
 import os
 
-from flask import Flask, render_template
+import assignation_api
+from flask import Flask, abort, jsonify, render_template, request, send_from_directory
 
 app = Flask(__name__)
 
@@ -98,12 +101,127 @@ def index():
                 },
             ],
         },
+        "model4": {
+            "title": "Recommandation d'assignation",
+            "subtitle": "Random Forest multi-classes sur Assigned To — classement Top‑K (probabilités), servi par ce hub.",
+            "label": "RF — assignation (intégré)",
+        },
     }
-    return render_template("index.html", cfg=cfg, hub_port=5080)
+    cats = {}
+    if assignation_api.metadata:
+        cats = assignation_api.metadata.get("categorical_uniques") or {}
+    return render_template(
+        "index.html",
+        cfg=cfg,
+        hub_port=5080,
+        assignation_ready=assignation_api.loaded,
+        assignation_error=assignation_api.load_error,
+        assignation_categories=cats,
+    )
+
+
+@app.route("/api/assignation/predict", methods=["POST"])
+def assignation_predict():
+    if not assignation_api.loaded:
+        return (
+            jsonify(
+                {
+                    "error": assignation_api.load_error
+                    or "Modèle d'assignation non chargé. Exécutez rf_assignation_pipeline.py."
+                }
+            ),
+            503,
+        )
+    try:
+        data = request.get_json(force=True, silent=True) or {}
+        return jsonify(assignation_api.predict_payload(data))
+    except KeyError as e:
+        return jsonify({"error": f"Champ manquant ou invalide: {e}"}), 400
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route("/api/assignation/model_info", methods=["GET"])
+def assignation_model_info():
+    if not assignation_api.loaded or not assignation_api.metadata:
+        return (
+            jsonify(
+                {
+                    "error": assignation_api.load_error or "Modèle non chargé",
+                    "loaded": False,
+                }
+            ),
+            503,
+        )
+    m = assignation_api.metadata
+    return jsonify(
+        {
+            "loaded": True,
+            "numeric_features": m.get("numeric_features"),
+            "categorical_features": m.get("categorical_features"),
+            "categorical_uniques": m.get("categorical_uniques"),
+            "metrics": {
+                "accuracy": m.get("accuracy"),
+                "f1_macro": m.get("f1_macro"),
+                "f1_weighted": m.get("f1_weighted"),
+                "precision_macro": m.get("precision_macro"),
+                "recall_macro": m.get("recall_macro"),
+                "hit_at_1": m.get("hit_at_1"),
+                "hit_at_3": m.get("hit_at_3"),
+                "n_train": m.get("n_train"),
+                "n_test": m.get("n_test"),
+                "cv_best_f1_macro": m.get("cv_best_f1_macro"),
+            },
+            "best_params": m.get("best_params"),
+        }
+    )
+
+
+@app.route("/api/assignation/performance", methods=["GET"])
+def assignation_performance():
+    if not assignation_api.loaded:
+        return (
+            jsonify(
+                {
+                    "error": assignation_api.load_error
+                    or "Modèle non chargé",
+                    "loaded": False,
+                }
+            ),
+            503,
+        )
+    payload = assignation_api.performance_payload()
+    if payload is None:
+        return jsonify({"error": "Métadonnées absentes", "loaded": False}), 503
+    return jsonify(payload)
+
+
+@app.route("/api/assignation/assets/<path:filename>")
+def assignation_asset(filename):
+    allowed = {"rf_assignation_confusion_matrix.png"}
+    if filename not in allowed:
+        abort(404)
+    path = assignation_api.ASSIGNATION_MODEL_DIR / filename
+    if not path.is_file():
+        abort(404)
+    return send_from_directory(
+        str(assignation_api.ASSIGNATION_MODEL_DIR), filename, mimetype="image/png"
+    )
+
+
+@app.route("/api/assignation/examples", methods=["GET"])
+def assignation_examples():
+    return jsonify(assignation_api.examples_json())
 
 
 if __name__ == "__main__":
     port = int(os.environ.get("ML_HUB_PORT", "5080"))
     print("Hub global ML — http://127.0.0.1:%d" % port)
-    print("Demarrez les backends (voir hub) : risque 5011-5013 + 5005, avancement 5002-5003, priorite 5000-5001.")
+    if assignation_api.loaded:
+        print("Assignation RF : chargee (onglet 4).")
+    else:
+        print("Assignation RF : non chargee —", assignation_api.load_error or "?")
+    print(
+        "Autres backends : risque 5011-5013 + 5005, avancement 5002-5003, priorite 5000-5001."
+    )
     app.run(debug=False, host="127.0.0.1", port=port, use_reloader=False)

@@ -1,6 +1,6 @@
 # Projet ML — Gestion de projet
 
-Machine Learning sur des données de **gestion de projet** : trois blocs complémentaires — **segmentation du risque** (`Risk_Level`), **prédiction de l’avancement** (`Progress`), **recommandation de priorité** (`Priority` : Low / Medium / High).
+Machine Learning sur des données de **gestion de projet** : **segmentation du risque** (`Risk_Level`), **prédiction de l’avancement** (`Progress`), **recommandation de priorité** (`Priority`), **recommandation d’assignation** (`Assigned To`).
 
 **Dépôt GitHub :** [https://github.com/mouradmissa/projet-ML](https://github.com/mouradmissa/projet-ML)
 
@@ -38,12 +38,14 @@ ML/
 │   ├── random_forest/frontend/   # RF seul — port 5012
 │   ├── decision_tree/frontend/   # DT seul — port 5013
 │   └── combined/                 # Comparateur 3 algo — port 5005
-└── Recommandation priorite/      # Modèle 3 — classification Priority
-    ├── README.md
-    ├── KNN/                      # FRONT port 5001 · MODEL/
-    ├── Random Forest/            # FRONT port 5000 · MODEL/
-    ├── comparison_analysis.py
-    └── comparison_*.png          # figures RF vs KNN (générées par comparison_analysis.py)
+├── Recommandation priorite/      # Modèle 3 — classification Priority
+│   ├── README.md
+│   ├── KNN/                      # FRONT port 5001 · MODEL/
+│   ├── Random Forest/            # FRONT port 5000 · MODEL/
+│   ├── comparison_analysis.py
+│   └── comparison_*.png          # figures RF vs KNN (générées par comparison_analysis.py)
+└── Recommandation assignation/   # Modèle 4 — recommandation d’assignés (Assigned To)
+    └── Random Forest/            # FRONT port 5020 · MODEL/
 ```
 
 ---
@@ -58,7 +60,7 @@ pip install pandas numpy scikit-learn matplotlib seaborn joblib flask
 
 ## Hub global (recommandé pour tester tout le projet)
 
-Une seule page avec onglets : risque (test **individuel** KNN / RF / DT puis **comparer les 3**), avancement (deux iframes), priorité (deux iframes).
+Une seule page avec onglets : risque (test **individuel** KNN / RF / DT puis **comparer les 3**), avancement (deux iframes), priorité (deux iframes), **assignation** (interface et API **intégrées au hub**, pas de serveur séparé — après entraînement des `.pkl`).
 
 ```powershell
 cd hub_global
@@ -78,6 +80,8 @@ python app.py
 | Risque — KNN seul | 5011 | `cd "Segmentation du risque\knn\frontend"; python app_risk.py` |
 | Risque — RF seul | 5012 | `cd "Segmentation du risque\random_forest\frontend"; python app_rf_risk.py` |
 | Risque — arbre de décision seul | 5013 | `cd "Segmentation du risque\decision_tree\frontend"; python app_dt_risk.py` |
+
+**Assignation** : chargée par le **hub** (onglet 4) — API `POST /api/assignation/predict` sur le même port que le hub. Optionnel : interface autonome sur le port **5020** avec `cd "Recommandation assignation\Random Forest\FRONT"; python app.py` et `ASSIGNATION_RF_PORT`.
 
 Les ports **5011–5013** évitent les conflits avec priorité (5000–5001) et avancement (5002–5003). Vous pouvez les surcharger avec les variables d’environnement `RISK_KNN_PORT`, `RISK_RF_PORT`, `RISK_DT_PORT`.
 
@@ -139,6 +143,29 @@ python app.py
 cd "Recommandation priorite\KNN\FRONT"
 python app.py
 # → http://127.0.0.1:5001  (StandardScaler côté serveur, obligatoire pour KNN)
+```
+
+---
+
+## 4. Recommandation d’assignation (`Assigned To`)
+
+**Objectif** : à partir des caractéristiques de la tâche (et du contexte projet), proposer un **Top‑K** d’assignés via un **Random Forest** multi-classes et `predict_proba`.
+
+**Entraînement** :
+
+```powershell
+python "Recommandation assignation\Random Forest\MODEL\rf_assignation_pipeline.py"
+python "Recommandation assignation\Random Forest\MODEL\rf_assignation_test.py"
+```
+
+**Interface principale** : onglet **4** du hub (`cd hub_global` puis `python app.py` → port **5080**). Les fichiers `.pkl` doivent être présents dans `Recommandation assignation/.../MODEL/`.
+
+**Interface optionnelle** (même modèle, port dédié) :
+
+```powershell
+cd "Recommandation assignation\Random Forest\FRONT"
+python app.py
+# → http://127.0.0.1:5020
 ```
 
 ---

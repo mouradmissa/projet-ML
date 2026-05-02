@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Assignation — Random Forest</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0c1222;
+    --card: #151d33;
+    --border: #2a3550;
+    --text: #e8eef7;
+    --muted: #8b9bb8;
+    --accent: #6366f1;
+    --accent2: #22d3ee;
+    --ok: #34d399;
+    --input-bg: #0f1629;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 32px 20px 48px;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; }
+  .hub-nav { margin-bottom: 18px; font-size: 0.85rem; }
+  .hub-nav a { color: var(--accent2); text-decoration: none; font-weight: 600; }
+  .folder-tag { font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 6px; }
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 800;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 8px;
+  }
+  .sub { color: var(--muted); font-size: 0.95rem; margin-bottom: 28px; line-height: 1.5; }
+  .tabs {
+    display: flex; gap: 6px; margin-bottom: 24px;
+    background: var(--card); padding: 6px; border-radius: 12px; border: 1px solid var(--border);
+  }
+  .tabs button {
+    flex: 1; border: none; background: transparent; color: var(--muted);
+    padding: 12px 16px; border-radius: 8px; font-weight: 600; cursor: pointer;
+    font-family: inherit; font-size: 0.9rem;
+  }
+  .tabs button.active { background: linear-gradient(90deg, var(--accent), #4f46e5); color: #fff; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .card h2 { font-size: 1rem; margin-bottom: 16px; color: var(--accent2); }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-grid .full { grid-column: 1 / -1; }
+  label { display: block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); margin-bottom: 4px; }
+  input, select {
+    width: 100%; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--input-bg); color: var(--text); font-family: inherit; font-size: 0.9rem;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--accent); }
+  .slider-row { display: flex; align-items: center; gap: 12px; }
+  .slider-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+  .slider-badge {
+    min-width: 48px; text-align: center; font-size: 0.8rem; font-weight: 700;
+    padding: 8px 10px; border-radius: 8px; background: var(--input-bg); border: 1px solid var(--border); color: var(--accent2);
+  }
+  .quick { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .quick button {
+    padding: 6px 12px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--input-bg); color: var(--muted); font-size: 0.75rem; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .quick button:hover { border-color: var(--accent); color: var(--text); }
+  .btn {
+    width: 100%; margin-top: 16px; padding: 14px; border: none; border-radius: 12px;
+    font-weight: 700; font-family: inherit; font-size: 0.95rem; cursor: pointer;
+    background: linear-gradient(90deg, var(--accent), #4f46e5); color: #fff;
+  }
+  .btn:disabled { opacity: 0.6; cursor: wait; }
+  .btn-secondary { margin-top: 8px; background: transparent; border: 1px solid var(--border); color: var(--muted); }
+  .result-big {
+    text-align: center; padding: 24px; border-radius: 14px;
+    background: linear-gradient(145deg, rgba(99,102,241,0.15), rgba(34,211,238,0.08));
+    border: 1px solid var(--border); margin-bottom: 16px;
+  }
+  .result-big .lbl { font-size: 0.75rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 8px; }
+  .result-big .name { font-size: 2rem; font-weight: 800; color: var(--ok); }
+  .rank-list { margin-top: 12px; text-align: left; }
+  .rank-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border);
+    background: var(--input-bg); margin-bottom: 8px; font-size: 0.88rem;
+  }
+  .rank-row span:last-child { color: var(--accent2); font-weight: 700; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }
+  @media (max-width: 600px) { .stats { grid-template-columns: 1fr; } }
+  .stat {
+    text-align: center; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--input-bg);
+  }
+  .stat .v { font-size: 1.25rem; font-weight: 800; color: var(--accent2); }
+  .stat .l { font-size: 0.65rem; text-transform: uppercase; color: var(--muted); margin-top: 4px; }
+  .hint { font-size: 0.8rem; color: var(--muted); margin-top: 12px; line-height: 1.5; }
+  .err { color: #f87171; font-size: 0.9rem; margin-top: 12px; display: none; }
+  .err.active { display: block; }
+  .loading { text-align: center; padding: 24px; color: var(--muted); display: none; }
+  .loading.active { display: block; }
+  .spinner {
+    width: 32px; height: 32px; border: 3px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 10px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .result-panel { display: none; }
+  .result-panel.active { display: block; }
+  footer { text-align: center; margin-top: 32px; font-size: 0.75rem; color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="hub-nav"><a href="http://127.0.0.1:5080">&larr; Hub ML (port 5080)</a></p>
+  <p class="folder-tag">Recommandation assignation / Random Forest / FRONT /</p>
+  <h1>Recommandation d’assignation (Random Forest)</h1>
+  <p class="sub">Classe multi-classes sur <strong>Assigned To</strong> ; affichage <strong>Top‑K</strong> par <code>predict_proba</code>. Métriques test : Hit@1 / Hit@3 (voir onglet métriques).</p>
+
+  <div class="tabs">
+    <button type="button" class="active" id="tabBtnPred" onclick="showTab('pred')">Test prédiction</button>
+    <button type="button" id="tabBtnPerf" onclick="showTab('perf')">Métriques modèle</button>
+  </div>
+
+  <div class="panel active" id="panel-pred">
+    <div class="grid">
+      <div class="card">
+        <h2>Contexte de la tâche</h2>
+        <div class="quick" id="examples-container"></div>
+        <form id="prediction-form">
+          <div class="form-grid">
+            <div class="full">
+              <label>Progress (0–1)</label>
+              <div class="slider-row">
+                <input type="range" id="progress" min="0" max="1" step="0.01" value="0.5">
+                <span class="slider-badge" id="progress-value">0.50</span>
+              </div>
+            </div>
+            <div><label>Budget</label><input type="number" id="budget" value="8000" min="1" step="1" required></div>
+            <div><label>Durée planifiée (jours)</label><input type="number" id="planned_duration_days" value="60" min="1" step="1" required></div>
+            <div><label>Heures déjà passées</label><input type="number" id="hours_spent" value="20" min="0" step="1" required></div>
+            <div><label>Utilisation budget (0–1)</label><input type="number" id="budget_utilization" value="0.5" min="0" max="1" step="0.01" required></div>
+            <div><label>Historique tâches assigné (count)</label><input type="number" id="assignee_historical_task_count" value="2" min="0" step="1" required></div>
+            <div class="full"><label>Top‑K affiché</label><input type="number" id="top_k" value="5" min="1" max="8" step="1"></div>
+
+            <div class="full"><label>Type de projet</label>
+              <select id="project_type" required>
+                {% for v in categories.get('Project Type', []) %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+              </select>
+            </div>
+            <div><label>Lieu</label>
+              <select id="location" required>
+                {% for v in categories.get('Location', []) %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+              </select>
+            </div>
+            <div><label>Statut projet</label>
+              <select id="project_status" required>
+                {% for v in categories.get('Project Status', []) %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+              </select>
+            </div>
+            <div><label>Priorité</label>
+              <select id="priority" required>
+                {% for v in categories.get('Priority', []) %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+              </select>
+            </div>
+            <div><label>Statut tâche</label>
+              <select id="task_status" required>
+                {% for v in categories.get('Task Status', []) %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+              </select>
+            </div>
+            <div><label>Niveau de risque</label>
+              <select id="risk_level" required>
+                {% for v in categories.get('Risk_Level', []) %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+              </select>
+            </div>
+          </div>
+          <button type="submit" class="btn" id="btnPred">Recommander des assignés</button>
+          <button type="reset" class="btn btn-secondary">Réinitialiser</button>
+        </form>
+        <p class="hint">Les catégories sont celles vues à l’entraînement (OneHotEncoder <code>handle_unknown</code>).</p>
+        <div class="err" id="error"></div>
+      </div>
+      <div class="card">
+        <h2>Résultat</h2>
+        <div class="loading" id="loading"><div class="spinner"></div><p>Calcul…</p></div>
+        <div class="result-panel" id="result-panel">
+          <div class="result-big">
+            <div class="lbl">Meilleur candidat</div>
+            <div class="name" id="pred-name">—</div>
+          </div>
+          <h2 style="margin-top:0;font-size:0.9rem;">Classement Top‑K</h2>
+          <div class="rank-list" id="rank-list"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel" id="panel-perf">
+    <div class="card">
+      <h2>Performances (jeu de test)</h2>
+      <div class="stats">
+        <div class="stat"><div class="v" id="accuracy">—</div><div class="l">Accuracy</div></div>
+        <div class="stat"><div class="v" id="f1-score">—</div><div class="l">F1 macro</div></div>
+        <div class="stat"><div class="v" id="hit-at-3">—</div><div class="l">Hit@3</div></div>
+      </div>
+      <p class="hint">Hit@3 = part des cas où l’assigné réel est dans les 3 premières probabilités.</p>
+    </div>
+  </div>
+
+  <footer><code>python app.py</code> · Port <strong>5020</strong> (env <code>ASSIGNATION_RF_PORT</code>) · <code>../MODEL/</code></footer>
+</div>
+
+<script>
+const API = window.location.origin;
+async function readJsonResponse(r) {
+  var ct = (r.headers.get('content-type') || '').toLowerCase();
+  var text = await r.text();
+  var parsed = null;
+  try { parsed = JSON.parse(text); } catch (_) {}
+  if (!r.ok) throw new Error((parsed && parsed.error) ? parsed.error : ('HTTP ' + r.status));
+  if (ct.indexOf('application/json') === -1 || parsed === null) {
+    throw new Error('Réponse non-JSON. Lancez python app.py sur ce port.');
+  }
+  return parsed;
+}
+
+function showTab(which) {
+  document.getElementById('tabBtnPred').classList.toggle('active', which === 'pred');
+  document.getElementById('tabBtnPerf').classList.toggle('active', which === 'perf');
+  document.getElementById('panel-pred').classList.toggle('active', which === 'pred');
+  document.getElementById('panel-perf').classList.toggle('active', which === 'perf');
+  if (which === 'perf') loadPerf();
+}
+
+var progressInput = document.getElementById('progress');
+var progressValue = document.getElementById('progress-value');
+progressInput.addEventListener('input', function () {
+  progressValue.textContent = parseFloat(this.value).toFixed(2);
+});
+
+function loadPerf() {
+  fetch(API + '/model_info')
+    .then(function (r) { return readJsonResponse(r); })
+    .then(function (data) {
+      var m = data.metrics || {};
+      document.getElementById('accuracy').textContent = m.accuracy != null ? (Number(m.accuracy) * 100).toFixed(1) + '%' : '—';
+      document.getElementById('f1-score').textContent = m.f1_macro != null ? Number(m.f1_macro).toFixed(3) : '—';
+      document.getElementById('hit-at-3').textContent = m.hit_at_3 != null ? (Number(m.hit_at_3) * 100).toFixed(1) + '%' : '—';
+    })
+    .catch(function () {
+      document.getElementById('accuracy').textContent = '?';
+    });
+}
+
+fetch(API + '/examples')
+  .then(function (r) { return readJsonResponse(r); })
+  .then(function (examples) {
+    var container = document.getElementById('examples-container');
+    examples.forEach(function (ex) {
+      var btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = ex.name;
+      btn.onclick = function () {
+        var d = ex.data || {};
+        if (d.progress != null) { progressInput.value = d.progress; progressValue.textContent = parseFloat(d.progress).toFixed(2); }
+        if (d.budget != null) document.getElementById('budget').value = d.budget;
+        if (d.planned_duration_days != null) document.getElementById('planned_duration_days').value = d.planned_duration_days;
+        if (d.hours_spent != null) document.getElementById('hours_spent').value = d.hours_spent;
+        if (d.budget_utilization != null) document.getElementById('budget_utilization').value = d.budget_utilization;
+        if (d.assignee_historical_task_count != null) document.getElementById('assignee_historical_task_count').value = d.assignee_historical_task_count;
+        function setSel(id, val) { var el = document.getElementById(id); if (el && val != null) el.value = val; }
+        setSel('project_type', d.project_type);
+        setSel('location', d.location);
+        setSel('project_status', d.project_status);
+        setSel('priority', d.priority);
+        setSel('task_status', d.task_status);
+        setSel('risk_level', d.risk_level);
+      };
+      container.appendChild(btn);
+    });
+  })
+  .catch(function () {});
+
+document.getElementById('prediction-form').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  var err = document.getElementById('error');
+  var loading = document.getElementById('loading');
+  var resultPanel = document.getElementById('result-panel');
+  err.classList.remove('active');
+  loading.classList.add('active');
+  resultPanel.classList.remove('active');
+  var payload = {
+    progress: parseFloat(document.getElementById('progress').value),
+    budget: parseFloat(document.getElementById('budget').value),
+    planned_duration_days: parseFloat(document.getElementById('planned_duration_days').value),
+    hours_spent: parseFloat(document.getElementById('hours_spent').value),
+    budget_utilization: parseFloat(document.getElementById('budget_utilization').value),
+    assignee_historical_task_count: parseFloat(document.getElementById('assignee_historical_task_count').value),
+    top_k: parseInt(document.getElementById('top_k').value, 10) || 5,
+    project_type: document.getElementById('project_type').value,
+    location: document.getElementById('location').value,
+    project_status: document.getElementById('project_status').value,
+    priority: document.getElementById('priority').value,
+    task_status: document.getElementById('task_status').value,
+    risk_level: document.getElementById('risk_level').value
+  };
+  try {
+    var response = await fetch(API + '/predict', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    var data = await readJsonResponse(response);
+    document.getElementById('pred-name').textContent = data.prediction || '—';
+    var list = document.getElementById('rank-list');
+    list.innerHTML = '';
+    (data.recommendations || []).forEach(function (r) {
+      var div = document.createElement('div');
+      div.className = 'rank-row';
+      div.innerHTML = '<span>' + r.rank + '. ' + r.assignee + '</span><span>' + (r.probability * 100).toFixed(1) + '%</span>';
+      list.appendChild(div);
+    });
+    resultPanel.classList.add('active');
+  } catch (err2) {
+    err.textContent = err2.message;
+    err.classList.add('active');
+  } finally {
+    loading.classList.remove('active');
+  }
+});
+
+document.getElementById('prediction-form').addEventListener('reset', function () {
+  setTimeout(function () {
+    progressValue.textContent = '0.50';
+    document.getElementById('result-panel').classList.remove('active');
+    document.getElementById('error').classList.remove('active');
+  }, 10);
+});
+</script>
+</body>
+</html>

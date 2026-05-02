@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hub ML — 3 modèles</title>
+  <title>Hub ML — gestion de projet</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
@@ -194,6 +194,255 @@
       color: var(--muted);
       border-top: 1px solid var(--border);
     }
+
+    /* Onglet 4 — assignation intégrée (pas d’iframe) */
+    .m4-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      max-width: 1400px;
+      width: 100%;
+      margin: 0 auto;
+      flex: 1;
+      min-height: 0;
+      align-content: start;
+    }
+    @media (max-width: 900px) {
+      .m4-layout { grid-template-columns: 1fr; }
+    }
+    .m4-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 18px;
+      overflow: auto;
+      max-height: calc(100vh - 200px);
+    }
+    .m4-card h3 { font-size: 0.95rem; color: var(--accent2); margin-bottom: 14px; }
+    .m4-form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .m4-form-grid .full { grid-column: 1 / -1; }
+    .m4-card label {
+      display: block;
+      font-size: 0.65rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .m4-card input, .m4-card select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--text);
+      font-family: inherit;
+      font-size: 0.82rem;
+    }
+    .m4-card input:focus, .m4-card select:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+    .m4-slider-row { display: flex; align-items: center; gap: 10px; }
+    .m4-slider-row input[type="range"] { flex: 1; accent-color: var(--accent); }
+    .m4-badge {
+      min-width: 44px;
+      text-align: center;
+      font-size: 0.75rem;
+      font-weight: 700;
+      padding: 6px 8px;
+      border-radius: 8px;
+      background: var(--input-bg);
+      border: 1px solid var(--border);
+      color: var(--accent2);
+    }
+    .m4-quick { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+    .m4-quick button {
+      padding: 5px 10px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .m4-quick button:hover { border-color: var(--accent); color: var(--text); }
+    .m4-btn {
+      width: 100%;
+      margin-top: 12px;
+      padding: 12px;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      font-family: inherit;
+      font-size: 0.88rem;
+      cursor: pointer;
+      background: linear-gradient(90deg, var(--accent), #4f46e5);
+      color: #fff;
+    }
+    .m4-btn:disabled { opacity: 0.55; cursor: not-allowed; }
+    .m4-result-name {
+      text-align: center;
+      font-size: 1.65rem;
+      font-weight: 800;
+      color: #34d399;
+      padding: 16px;
+      border-radius: 12px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid var(--border);
+      margin-bottom: 12px;
+    }
+    .m4-rank-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      margin-bottom: 6px;
+      font-size: 0.82rem;
+    }
+    .m4-rank-row span:last-child { color: var(--accent2); font-weight: 700; }
+    .m4-stats { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 12px; }
+    @media (max-width: 1000px) { .m4-stats { grid-template-columns: repeat(3, 1fr); } }
+    @media (max-width: 600px) { .m4-stats { grid-template-columns: 1fr; } }
+    .m4-stat {
+      text-align: center;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      font-size: 0.72rem;
+    }
+    .m4-stat .v { font-size: 1.1rem; font-weight: 800; color: var(--accent2); }
+    .m4-err { color: #f87171; font-size: 0.82rem; margin-top: 8px; display: none; }
+    .m4-err.active { display: block; }
+    .m4-loading { text-align: center; color: var(--muted); font-size: 0.8rem; display: none; }
+    .m4-loading.active { display: block; }
+
+    .m4-perf-wrap {
+      max-width: 1400px;
+      margin: 16px auto 0;
+      width: 100%;
+    }
+    .m4-perf-details {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 16px 18px;
+    }
+    .m4-perf-details summary {
+      cursor: pointer;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--accent2);
+      list-style: none;
+    }
+    .m4-perf-details summary::-webkit-details-marker { display: none; }
+    .m4-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+    .m4-kpi {
+      text-align: center;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      font-size: 0.68rem;
+      color: var(--muted);
+    }
+    .m4-kpi .v { font-size: 1.05rem; font-weight: 800; color: var(--accent2); display: block; margin-bottom: 4px; }
+    .m4-table-wrap { overflow-x: auto; margin-top: 14px; }
+    .m4-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.76rem;
+    }
+    .m4-table th, .m4-table td {
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      text-align: left;
+    }
+    .m4-table th { background: var(--input-bg); color: var(--muted); font-weight: 600; }
+    .m4-cm-img {
+      max-width: min(720px, 100%);
+      height: auto;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      margin-top: 14px;
+      display: block;
+    }
+    .m4-analysis {
+      white-space: pre-wrap;
+      font-size: 0.76rem;
+      color: var(--muted);
+      line-height: 1.55;
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: var(--input-bg);
+      border-radius: 10px;
+      border: 1px solid var(--border);
+    }
+    .m4-fi-row { font-size: 0.72rem; margin-bottom: 6px; display: flex; justify-content: space-between; gap: 8px; }
+    .m4-fi-bar { height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 4px; }
+    .m4-fi-fill { height: 100%; background: linear-gradient(90deg, var(--accent), var(--accent2)); border-radius: 3px; }
+
+    .m4-subtabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin: 12px auto 16px;
+      max-width: 1400px;
+    }
+    .m4-subtabs button {
+      border: 1px solid var(--border);
+      background: var(--input-bg);
+      color: var(--muted);
+      padding: 10px 18px;
+      border-radius: 10px;
+      font-family: inherit;
+      font-weight: 600;
+      font-size: 0.82rem;
+      cursor: pointer;
+    }
+    .m4-subtabs button:hover { color: var(--text); border-color: var(--accent2); }
+    .m4-subtabs button.active {
+      background: linear-gradient(90deg, var(--accent), #4f46e5);
+      color: #fff;
+      border-color: transparent;
+    }
+    .m4-panel-section { max-width: 1400px; margin: 0 auto; width: 100%; }
+    .m4-out-block {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(15, 22, 41, 0.6);
+      font-size: 0.78rem;
+    }
+    .m4-out-block h4 { font-size: 0.75rem; color: var(--accent2); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.06em; }
+    .m4-out-block pre {
+      margin: 0;
+      font-size: 0.68rem;
+      line-height: 1.45;
+      overflow-x: auto;
+      max-height: 220px;
+      color: var(--muted);
+    }
+    .m4-out-meta { color: var(--text); line-height: 1.5; }
+    .m4-perf-section-title {
+      font-size: 0.95rem;
+      color: var(--accent2);
+      margin: 18px 0 10px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
   </style>
 </head>
 <body>
@@ -202,7 +451,8 @@
       <h1>Hub ML — gestion de projet</h1>
       <p class="tagline">
         <strong>Risque</strong> : chaque algorithme a son interface, puis <em>Comparer les 3</em>.
-        <strong>Avancement</strong> et <strong>priorité</strong> : deux iframes côte à côte comme avant.
+        <strong>Avancement</strong> et <strong>priorité</strong> : deux iframes côte à côte.
+        <strong>Assignation</strong> : intégrée (RF, même port que le hub).
       </p>
       <span class="host-badge">Backends : {{ cfg.host }} · Hub : port {{ hub_port }}</span>
 
@@ -215,6 +465,9 @@
         </button>
         <button type="button" id="tab-m3" data-panel="panel-m3" aria-selected="false">
           3. Recommandation de priorité
+        </button>
+        <button type="button" id="tab-m4" data-panel="panel-m4" aria-selected="false">
+          4. Recommandation d’assignation
         </button>
       </div>
 
@@ -232,6 +485,7 @@
           <div><strong>Modèle 3</strong> — ports 5000 et 5001</div>
           <div>cd "Recommandation priorite/Random Forest/FRONT"; python app.py</div>
           <div>cd "Recommandation priorite/KNN/FRONT"; python app.py</div>
+          <div><strong>Modèle 4</strong> — assignation : inclus dans ce hub (entraîner les .pkl dans <code>Recommandation assignation/.../MODEL/</code>)</div>
         </div>
       </details>
     </div>
@@ -315,12 +569,157 @@
         {% endfor %}
       </div>
     </div>
+
+    <div class="panel" id="panel-m4" role="tabpanel" hidden>
+      <div class="panel-head">
+        <h2>{{ cfg.model4.title }}</h2>
+        <p>{{ cfg.model4.subtitle }}</p>
+      </div>
+      {% if not assignation_ready %}
+      <p class="hint">Modèle non disponible : {{ assignation_error or "fichiers .pkl absents" }}. Exécutez
+        <code>python Recommandation assignation/Random Forest/MODEL/rf_assignation_pipeline.py</code>
+        puis redémarrez le hub.</p>
+      {% else %}
+      <p class="hint">Deux vues : <strong>Prédiction</strong> (entrées + sorties API) et <strong>Performance</strong> (métriques test, matrice, rapport).</p>
+      {% endif %}
+
+      {% if assignation_ready %}
+      <div class="m4-subtabs" id="m4-subtabs" role="tablist">
+        <button type="button" class="active" data-m4panel="pred" aria-selected="true">Prédiction &amp; sorties</button>
+        <button type="button" data-m4panel="perf" aria-selected="false">Performance du modèle</button>
+      </div>
+      {% endif %}
+
+      <div class="m4-panel-section" id="m4-panel-pred" {% if assignation_ready %}style="display:block"{% endif %}>
+      <div class="m4-layout">
+        <div class="m4-card">
+          <h3>Contexte de la tâche</h3>
+          <div class="m4-quick" id="m4-examples"></div>
+          <form id="m4-form">
+            <div class="m4-form-grid">
+              <div class="full">
+                <label>Progress (0–1)</label>
+                <div class="m4-slider-row">
+                  <input type="range" id="m4-progress" min="0" max="1" step="0.01" value="0.5" {% if not assignation_ready %}disabled{% endif %}>
+                  <span class="m4-badge" id="m4-progress-val">0.50</span>
+                </div>
+              </div>
+              <div><label>Budget</label><input type="number" id="m4-budget" value="8000" min="1" step="1" required {% if not assignation_ready %}disabled{% endif %}></div>
+              <div><label>Durée planifiée (j)</label><input type="number" id="m4-planned" value="60" min="1" step="1" required {% if not assignation_ready %}disabled{% endif %}></div>
+              <div><label>Heures passées</label><input type="number" id="m4-hours" value="20" min="0" step="1" required {% if not assignation_ready %}disabled{% endif %}></div>
+              <div><label>Util. budget (0–1)</label><input type="number" id="m4-budget-util" value="0.5" min="0" max="1" step="0.01" required {% if not assignation_ready %}disabled{% endif %}></div>
+              <div><label>Historique assigné (count)</label><input type="number" id="m4-hist" value="2" min="0" step="1" required {% if not assignation_ready %}disabled{% endif %}></div>
+              <div class="full"><label>Top‑K</label><input type="number" id="m4-topk" value="5" min="1" max="8" step="1" {% if not assignation_ready %}disabled{% endif %}></div>
+
+              {% if assignation_ready %}
+              <div class="full"><label>Type de projet</label>
+                <select id="m4-project-type" required>
+                  {% for v in assignation_categories.get('Project Type', []) %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+                </select>
+              </div>
+              <div><label>Lieu</label>
+                <select id="m4-location" required>
+                  {% for v in assignation_categories.get('Location', []) %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+                </select>
+              </div>
+              <div><label>Statut projet</label>
+                <select id="m4-project-status" required>
+                  {% for v in assignation_categories.get('Project Status', []) %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+                </select>
+              </div>
+              <div><label>Priorité</label>
+                <select id="m4-priority" required>
+                  {% for v in assignation_categories.get('Priority', []) %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+                </select>
+              </div>
+              <div><label>Statut tâche</label>
+                <select id="m4-task-status" required>
+                  {% for v in assignation_categories.get('Task Status', []) %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+                </select>
+              </div>
+              <div><label>Risque</label>
+                <select id="m4-risk" required>
+                  {% for v in assignation_categories.get('Risk_Level', []) %}<option value="{{ v }}">{{ v }}</option>{% endfor %}
+                </select>
+              </div>
+              {% endif %}
+            </div>
+            <button type="submit" class="m4-btn" id="m4-submit" {% if not assignation_ready %}disabled{% endif %}>Recommander des assignés</button>
+          </form>
+          <div class="m4-err" id="m4-error"></div>
+        </div>
+        <div class="m4-card">
+          <h3>Sorties du modèle</h3>
+          <div class="m4-loading" id="m4-loading">Calcul…</div>
+          <div id="m4-result-empty" style="color: var(--muted); font-size: 0.85rem;">Remplissez le formulaire et cliquez sur <strong>Recommander des assignés</strong>.</div>
+          <div id="m4-result" style="display: none;">
+            <div class="m4-result-name" id="m4-pred-name">—</div>
+            <p class="hint" style="margin:8px 0 6px;">Classement <strong>Top‑K</strong> (probabilités <code>predict_proba</code>) :</p>
+            <div id="m4-rank-list"></div>
+            <p class="hint" style="margin:14px 0 8px;"><strong>Métriques globales</strong> (évaluation sur jeu de test à l’entraînement) :</p>
+            <div class="m4-stats">
+              <div class="m4-stat"><div class="v" id="m4-m-acc">—</div><div>Accuracy (test)</div></div>
+              <div class="m4-stat"><div class="v" id="m4-m-f1m">—</div><div>F1 macro</div></div>
+              <div class="m4-stat"><div class="v" id="m4-m-f1w">—</div><div>F1 pondéré</div></div>
+              <div class="m4-stat"><div class="v" id="m4-m-hit1">—</div><div>Hit@1</div></div>
+              <div class="m4-stat"><div class="v" id="m4-m-hit3">—</div><div>Hit@3</div></div>
+            </div>
+            <div class="m4-out-block">
+              <h4>Informations modèle</h4>
+              <div class="m4-out-meta" id="m4-model-meta">—</div>
+            </div>
+            <details class="m4-out-block" style="margin-top:10px;">
+              <summary style="cursor:pointer; font-weight:600; color:var(--accent2);">Réponse JSON complète (API)</summary>
+              <pre id="m4-json-out"></pre>
+            </details>
+          </div>
+        </div>
+      </div>
+      </div>
+
+      {% if assignation_ready %}
+      <div class="m4-panel-section" id="m4-panel-perf" style="display:none;">
+        <p class="hint">Source : <code>rf_assignation_meta.pkl</code> + <code>rf_assignation_confusion_matrix.png</code>. Matrice : lignes = vrai assigné, colonnes = prédiction.</p>
+        <h3 class="m4-perf-section-title">Indicateurs agrégés (jeu de test)</h3>
+        <div class="m4-kpi-grid" id="m4-kpi-grid"></div>
+        <h3 class="m4-perf-section-title">Matrice de confusion</h3>
+        <img class="m4-cm-img" id="m4-cm-img" alt="Matrice de confusion" style="display:none;" />
+        <h3 class="m4-perf-section-title">Métriques par assigné</h3>
+        <div class="m4-table-wrap">
+          <table class="m4-table" id="m4-perf-table" style="display:none;">
+            <thead>
+              <tr>
+                <th>Assigné</th>
+                <th>Précision</th>
+                <th>Rappel</th>
+                <th>F1</th>
+                <th>Support</th>
+              </tr>
+            </thead>
+            <tbody id="m4-perf-tbody"></tbody>
+          </table>
+        </div>
+        <p class="hint" id="m4-perf-fallback" style="display:none;">Métriques détaillées absentes : réexécutez <code>rf_assignation_pipeline.py</code> puis redémarrez le hub.</p>
+        <h3 class="m4-perf-section-title">Importance des variables (top 10)</h3>
+        <div id="m4-fi-block" style="display:none;">
+          <div id="m4-fi-list"></div>
+        </div>
+        <h3 class="m4-perf-section-title">Analyse</h3>
+        <div class="m4-analysis" id="m4-analysis" style="display:none;"></div>
+        <h3 class="m4-perf-section-title">Rapport de classification (sklearn)</h3>
+        <div class="m4-out-block">
+          <pre id="m4-report-pre" style="max-height:280px; white-space:pre-wrap;">—</pre>
+        </div>
+      </div>
+      {% endif %}
+    </div>
   </main>
 
   <footer>
-    Hub <code>hub_global/app.py</code> · Variable d’environnement <code>ML_HUB_BACKEND_HOST</code> pour changer l’hôte des iframes
+    Hub <code>hub_global/app.py</code> · Assignation : <code>/api/assignation/predict</code> · <code>/api/assignation/performance</code>
   </footer>
 
+  <script>window.__ASSIGNATION_READY__ = {{ assignation_ready | tojson }};</script>
   <script>
     (function () {
       var buttons = document.querySelectorAll('.header-inner > .tabs > button');
@@ -361,6 +760,228 @@
           });
         });
       }
+    })();
+  </script>
+  <script>
+    (function () {
+      if (!window.__ASSIGNATION_READY__) return;
+      var API = window.location.origin;
+      var sub = document.querySelectorAll('#m4-subtabs button');
+      var predP = document.getElementById('m4-panel-pred');
+      var perfP = document.getElementById('m4-panel-perf');
+      if (sub.length && predP && perfP) {
+        sub.forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var id = btn.getAttribute('data-m4panel');
+            sub.forEach(function (b) {
+              b.classList.toggle('active', b === btn);
+              b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+            });
+            predP.style.display = id === 'pred' ? 'block' : 'none';
+            perfP.style.display = id === 'perf' ? 'block' : 'none';
+          });
+        });
+      }
+      var pr = document.getElementById('m4-progress');
+      var prv = document.getElementById('m4-progress-val');
+      if (pr && prv) {
+        pr.addEventListener('input', function () {
+          prv.textContent = parseFloat(pr.value).toFixed(2);
+        });
+      }
+      function readJson(r) {
+        return r.text().then(function (text) {
+          var parsed = null;
+          try { parsed = JSON.parse(text); } catch (_) {}
+          var ct = (r.headers.get('content-type') || '').toLowerCase();
+          if (!r.ok) throw new Error((parsed && parsed.error) ? parsed.error : ('HTTP ' + r.status));
+          if (ct.indexOf('application/json') === -1 || parsed === null) throw new Error('Réponse non-JSON');
+          return parsed;
+        });
+      }
+      fetch(API + '/api/assignation/examples')
+        .then(readJson)
+        .then(function (examples) {
+          var box = document.getElementById('m4-examples');
+          if (!box) return;
+          examples.forEach(function (ex) {
+            var btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = ex.name;
+            btn.onclick = function () {
+              var d = ex.data || {};
+              if (d.progress != null) { pr.value = d.progress; prv.textContent = parseFloat(d.progress).toFixed(2); }
+              if (d.budget != null) document.getElementById('m4-budget').value = d.budget;
+              if (d.planned_duration_days != null) document.getElementById('m4-planned').value = d.planned_duration_days;
+              if (d.hours_spent != null) document.getElementById('m4-hours').value = d.hours_spent;
+              if (d.budget_utilization != null) document.getElementById('m4-budget-util').value = d.budget_utilization;
+              if (d.assignee_historical_task_count != null) document.getElementById('m4-hist').value = d.assignee_historical_task_count;
+              function setSel(id, val) { var el = document.getElementById(id); if (el && val != null) el.value = val; }
+              setSel('m4-project-type', d.project_type);
+              setSel('m4-location', d.location);
+              setSel('m4-project-status', d.project_status);
+              setSel('m4-priority', d.priority);
+              setSel('m4-task-status', d.task_status);
+              setSel('m4-risk', d.risk_level);
+            };
+            box.appendChild(btn);
+          });
+        })
+        .catch(function () {});
+
+      var form = document.getElementById('m4-form');
+      if (!form) return;
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var err = document.getElementById('m4-error');
+        var loading = document.getElementById('m4-loading');
+        var empty = document.getElementById('m4-result-empty');
+        var result = document.getElementById('m4-result');
+        err.classList.remove('active');
+        loading.classList.add('active');
+        empty.style.display = 'none';
+        result.style.display = 'none';
+        var payload = {
+          progress: parseFloat(document.getElementById('m4-progress').value),
+          budget: parseFloat(document.getElementById('m4-budget').value),
+          planned_duration_days: parseFloat(document.getElementById('m4-planned').value),
+          hours_spent: parseFloat(document.getElementById('m4-hours').value),
+          budget_utilization: parseFloat(document.getElementById('m4-budget-util').value),
+          assignee_historical_task_count: parseFloat(document.getElementById('m4-hist').value),
+          top_k: parseInt(document.getElementById('m4-topk').value, 10) || 5,
+          project_type: document.getElementById('m4-project-type').value,
+          location: document.getElementById('m4-location').value,
+          project_status: document.getElementById('m4-project-status').value,
+          priority: document.getElementById('m4-priority').value,
+          task_status: document.getElementById('m4-task-status').value,
+          risk_level: document.getElementById('m4-risk').value
+        };
+        fetch(API + '/api/assignation/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        })
+          .then(readJson)
+          .then(function (data) {
+            document.getElementById('m4-pred-name').textContent = data.prediction || '—';
+            var list = document.getElementById('m4-rank-list');
+            list.innerHTML = '';
+            (data.recommendations || []).forEach(function (r) {
+              var div = document.createElement('div');
+              div.className = 'm4-rank-row';
+              div.innerHTML = '<span>' + r.rank + '. ' + r.assignee + '</span><span>' + (r.probability * 100).toFixed(1) + '%</span>';
+              list.appendChild(div);
+            });
+            var m = data.metrics || {};
+            document.getElementById('m4-m-acc').textContent = m.accuracy_train_report != null ? (Number(m.accuracy_train_report) * 100).toFixed(1) + '%' : '—';
+            document.getElementById('m4-m-f1m').textContent = m.f1_macro != null ? Number(m.f1_macro).toFixed(3) : '—';
+            document.getElementById('m4-m-f1w').textContent = m.f1_weighted != null ? Number(m.f1_weighted).toFixed(3) : '—';
+            document.getElementById('m4-m-hit1').textContent = m.hit_at_1 != null ? (Number(m.hit_at_1) * 100).toFixed(1) + '%' : '—';
+            document.getElementById('m4-m-hit3').textContent = m.hit_at_3 != null ? (Number(m.hit_at_3) * 100).toFixed(1) + '%' : '—';
+            var mi = data.model_info || {};
+            var metaEl = document.getElementById('m4-model-meta');
+            if (metaEl) {
+              metaEl.innerHTML =
+                '<strong>Algorithme :</strong> ' + (mi.type || '—') + '<br>' +
+                '<strong>Nombre de classes :</strong> ' + (mi.n_classes != null ? mi.n_classes : '—') + '<br>' +
+                '<strong>Assignés :</strong> ' + (mi.classes && mi.classes.length ? mi.classes.join(', ') : '—');
+            }
+            var jout = document.getElementById('m4-json-out');
+            if (jout) jout.textContent = JSON.stringify(data, null, 2);
+            result.style.display = 'block';
+          })
+          .catch(function (e2) {
+            err.textContent = e2.message;
+            err.classList.add('active');
+            empty.style.display = 'block';
+          })
+          .finally(function () {
+            loading.classList.remove('active');
+          });
+      });
+
+      function pct(x) {
+        return x == null ? '—' : (Number(x) * 100).toFixed(1) + '%';
+      }
+      function num3(x) {
+        return x == null ? '—' : Number(x).toFixed(3);
+      }
+      fetch(API + '/api/assignation/performance')
+        .then(readJson)
+        .then(function (d) {
+          var met = d.metrics || {};
+          var kpi = document.getElementById('m4-kpi-grid');
+          if (!kpi) return;
+          var items = [
+            ['Accuracy (test)', pct(met.accuracy)],
+            ['F1 macro', num3(met.f1_macro)],
+            ['F1 pondéré', num3(met.f1_weighted)],
+            ['Hit@1', pct(met.hit_at_1)],
+            ['Hit@3', pct(met.hit_at_3)],
+            ['CV F1 macro', num3(met.cv_best_f1_macro)],
+            ['Train / Test', (met.n_train != null && met.n_test != null) ? (met.n_train + ' / ' + met.n_test) : '—']
+          ];
+          kpi.innerHTML = '';
+          items.forEach(function (it) {
+            var div = document.createElement('div');
+            div.className = 'm4-kpi';
+            div.innerHTML = '<span class="v">' + it[1] + '</span>' + it[0];
+            kpi.appendChild(div);
+          });
+          if (d.has_confusion_image) {
+            var img = document.getElementById('m4-cm-img');
+            img.src = API + '/api/assignation/assets/rf_assignation_confusion_matrix.png?t=' + Date.now();
+            img.style.display = 'block';
+            img.onerror = function () { img.style.display = 'none'; };
+          }
+          var rows = d.per_class_metrics || [];
+          var tbody = document.getElementById('m4-perf-tbody');
+          var table = document.getElementById('m4-perf-table');
+          var fallback = document.getElementById('m4-perf-fallback');
+          if (rows.length && tbody && table) {
+            tbody.innerHTML = '';
+            rows.forEach(function (r) {
+              var tr = document.createElement('tr');
+              tr.innerHTML = '<td>' + r.assignee + '</td><td>' + num3(r.precision) + '</td><td>' + num3(r.recall) + '</td><td>' + num3(r.f1) + '</td><td>' + r.support + '</td>';
+              tbody.appendChild(tr);
+            });
+            table.style.display = 'table';
+            if (fallback) fallback.style.display = 'none';
+          } else if (fallback) {
+            fallback.style.display = 'block';
+          }
+          var an = document.getElementById('m4-analysis');
+          if (d.performance_analysis && an) {
+            an.textContent = d.performance_analysis;
+            an.style.display = 'block';
+          }
+          var repPre = document.getElementById('m4-report-pre');
+          if (repPre && d.classification_report_text) {
+            repPre.textContent = d.classification_report_text;
+          } else if (repPre) {
+            repPre.textContent = '—';
+          }
+          var fi = d.feature_importance_top || [];
+          var list = document.getElementById('m4-fi-list');
+          var block = document.getElementById('m4-fi-block');
+          if (fi.length && list && block) {
+            list.innerHTML = '';
+            var mx = 0;
+            fi.slice(0, 10).forEach(function (row) {
+              var v = Number(row.Importance);
+              if (v > mx) mx = v;
+            });
+            fi.slice(0, 10).forEach(function (row) {
+              var v = Number(row.Importance);
+              var w = mx > 0 ? (v / mx * 100) : 0;
+              var div = document.createElement('div');
+              div.innerHTML = '<div class="m4-fi-row"><span>' + String(row.Feature).replace(/num__/g, '').replace(/cat__/g, '') + '</span><span>' + (v * 100).toFixed(1) + '%</span></div><div class="m4-fi-bar"><div class="m4-fi-fill" style="width:' + w + '%"></div></div>';
+              list.appendChild(div);
+            });
+            block.style.display = 'block';
+          }
+        })
+        .catch(function () {});
     })();
   </script>
 </body>

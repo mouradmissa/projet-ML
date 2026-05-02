@@ -1,0 +1,58 @@
+Évaluation — Recommandation de priorité (RF vs KNN)
+
+Distribution globale de la cible (dataset nettoyé):
+
+Priority
+High      156
+Medium     91
+Low        53
+Name: count, dtype: int64
+
+Distribution sur le jeu de test (stratifié):
+
+  Low: 11 (18.3%)
+  Medium: 18 (30.0%)
+  High: 31 (51.7%)
+
+Tableau comparatif:
+
+       Modèle  Accuracy  Précision (macro)  Rappel (macro)  F1 (macro)  Précision (weighted)  Rappel (weighted)  F1 (weighted)
+          KNN  0.416667           0.432061        0.448246    0.413095              0.492208           0.416667       0.424425
+Random Forest  0.533333           0.440356        0.414250    0.403951              0.491017           0.533333       0.487852
+
+
+Rapport Random Forest:
+
+              precision    recall  f1-score   support
+
+         Low       0.29      0.18      0.22        11
+      Medium       0.44      0.22      0.30        18
+        High       0.59      0.84      0.69        31
+
+    accuracy                           0.53        60
+   macro avg       0.44      0.41      0.40        60
+weighted avg       0.49      0.53      0.49        60
+
+
+Rapport KNN:
+
+              precision    recall  f1-score   support
+
+         Low       0.32      0.55      0.40        11
+      Medium       0.33      0.44      0.38        18
+        High       0.65      0.35      0.46        31
+
+    accuracy                           0.42        60
+   macro avg       0.43      0.45      0.41        60
+weighted avg       0.49      0.42      0.42        60
+
+
+AUC ROC (one-vs-rest, moyenne des AUC par classe — calcul manuel):
+
+  Random Forest: 0.5788
+  KNN:           0.5665
+
+AUC ROC (sklearn, multi_class='ovr', average='macro'):
+
+  Random Forest: 0.5788
+  KNN:           0.5665
